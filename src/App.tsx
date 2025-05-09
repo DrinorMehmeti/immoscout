@@ -77,7 +77,7 @@ function App() {
                 Si funksionon?
               </h2>
               <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
-                Gjeni pronën tuaj të ëndrrave me vetëm disa hapa të thjeshtë
+                Drinori
               </p>
             </div>
             
