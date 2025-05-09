@@ -15,6 +15,8 @@ export default defineConfig({
         dashboard: resolve(__dirname, 'dashboard.html'),
         listings: resolve(__dirname, 'listings.html'),
         addProperty: resolve(__dirname, 'add-property.html'),
+        login: resolve(__dirname, 'login.html'),
+        register: resolve(__dirname, 'register.html'),
       },
     },
   },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import PropertyGrid from './components/PropertyGrid';
@@ -12,23 +12,13 @@ function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState<'login' | 'register'>('login');
   
-  const openLoginModal = () => {
-    setAuthModalView('login');
-    setIsAuthModalOpen(true);
-  };
-  
-  const openRegisterModal = () => {
-    setAuthModalView('register');
-    setIsAuthModalOpen(true);
-  };
-  
   // Handle hash-based navigation
-  React.useEffect(() => {
+  useEffect(() => {
     const handleHashChange = () => {
       if (window.location.hash === '#login') {
-        openLoginModal();
+        window.location.href = '/login.html';
       } else if (window.location.hash === '#register') {
-        openRegisterModal();
+        window.location.href = '/register.html';
       }
     };
     
@@ -116,12 +106,6 @@ function App() {
         </main>
         
         <Footer />
-        
-        <AuthModal 
-          isOpen={isAuthModalOpen} 
-          onClose={() => setIsAuthModalOpen(false)} 
-          initialView={authModalView}
-        />
       </div>
     </AuthProvider>
   );

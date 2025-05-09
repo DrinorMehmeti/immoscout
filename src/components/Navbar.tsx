@@ -44,7 +44,7 @@ const Navbar: React.FC = () => {
                   <span>Shto pronë</span>
                 </a>
                 <div className="h-6 w-px bg-gray-300"></div>
-                <span className="text-sm font-medium text-gray-700">Përshëndetje, {authState.user?.name}</span>
+                <span className="text-sm font-medium text-gray-700">Përshëndetje, {authState.user?.profile?.name}</span>
                 <button 
                   onClick={logout}
                   className="flex items-center text-gray-500 hover:text-gray-700"
@@ -55,11 +55,11 @@ const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <a href="#login" className="text-gray-500 hover:text-gray-700 flex items-center">
+                <a href="/login.html" className="text-gray-500 hover:text-gray-700 flex items-center">
                   <User className="h-5 w-5 mr-1" />
                   <span>Kyçu</span>
                 </a>
-                <a href="#register" className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium">
+                <a href="/register.html" className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium">
                   Regjistrohu
                 </a>
               </div>
@@ -113,11 +113,11 @@ const Navbar: React.FC = () => {
               <div className="flex items-center px-4">
                 <div className="flex-shrink-0">
                   <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
-                    <span className="text-white font-medium">{authState.user?.name.charAt(0)}</span>
+                    <span className="text-white font-medium">{authState.user?.profile?.name.charAt(0)}</span>
                   </div>
                 </div>
                 <div className="ml-3">
-                  <div className="text-base font-medium text-gray-800">{authState.user?.name}</div>
+                  <div className="text-base font-medium text-gray-800">{authState.user?.profile?.name}</div>
                   <div className="text-sm font-medium text-gray-500">{authState.user?.email}</div>
                 </div>
                 <button
@@ -130,11 +130,11 @@ const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex flex-col space-y-3 px-4">
-                <a href="#login" className="text-base font-medium text-gray-500 hover:text-gray-700 flex items-center">
+                <a href="/login.html" className="text-base font-medium text-gray-500 hover:text-gray-700 flex items-center">
                   <User className="h-5 w-5 mr-2" />
                   <span>Kyçu</span>
                 </a>
-                <a href="#register" className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium text-center">
+                <a href="/register.html" className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium text-center">
                   Regjistrohu
                 </a>
               </div>
