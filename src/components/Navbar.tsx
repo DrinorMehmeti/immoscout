@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, User, Home, LogOut, Building, Plus, Search, Star, Lightbulb, BookOpen, Briefcase, Sun, Moon } from 'lucide-react';
+import { Menu, X, User, Home, LogOut, Building, Plus, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -66,24 +66,8 @@ const Navbar: React.FC = () => {
                 Shpallje
               </NavLink>
               
-              <NavLink to="/premium" isActive={isActive('/premium')}>
-                Premium
-                <Star className="ml-1 h-4 w-4" />
-              </NavLink>
-              
-              <NavLink to="/si-funksionon" isActive={isActive('/si-funksionon')}>
-                Si funksionon
-                <Lightbulb className="ml-1 h-4 w-4" />
-              </NavLink>
-              
-              <NavLink to="/blog" isActive={isActive('/blog')}>
-                Blog
-                <BookOpen className="ml-1 h-4 w-4" />
-              </NavLink>
-              
-              <NavLink to="/agjencite" isActive={isActive('/agjencite')}>
-                Agjencitë
-                <Briefcase className="ml-1 h-4 w-4" />
+              <NavLink to="/kontakt" isActive={isActive('/kontakt')}>
+                Kontakt
               </NavLink>
             </div>
           </div>
@@ -101,11 +85,6 @@ const Navbar: React.FC = () => {
               ) : (
                 <Moon className="h-5 w-5" />
               )}
-            </button>
-            
-            {/* Search button */}
-            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-all">
-              <Search className="h-5 w-5" />
             </button>
             
             {/* Authentication/User actions */}
@@ -210,24 +189,9 @@ const Navbar: React.FC = () => {
             Shpallje
           </MobileNavLink>
           
-          <MobileNavLink to="/premium" isActive={isActive('/premium')}>
-            <Star className="mr-3 h-5 w-5" />
-            Premium
-          </MobileNavLink>
-          
-          <MobileNavLink to="/si-funksionon" isActive={isActive('/si-funksionon')}>
-            <Lightbulb className="mr-3 h-5 w-5" />
-            Si funksionon
-          </MobileNavLink>
-          
-          <MobileNavLink to="/blog" isActive={isActive('/blog')}>
-            <BookOpen className="mr-3 h-5 w-5" />
-            Blog
-          </MobileNavLink>
-          
-          <MobileNavLink to="/agjencite" isActive={isActive('/agjencite')}>
-            <Briefcase className="mr-3 h-5 w-5" />
-            Agjencitë
+          <MobileNavLink to="/kontakt" isActive={isActive('/kontakt')}>
+            <Building className="mr-3 h-5 w-5" />
+            Kontakt
           </MobileNavLink>
           
           {authState.isAuthenticated ? (
