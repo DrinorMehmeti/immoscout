@@ -32,6 +32,26 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     isLoading: true,
   });
 
+  const fetchProfile = async (userId: string): Promise<ProfileType | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle(); // Use maybeSingle instead of single to avoid 406 errors
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Exception fetching profile:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     // Check active session
     const initializeAuth = async () => {
@@ -40,16 +60,12 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (session) {
         const { user } = session;
         // Fetch user profile
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+        const profile = await fetchProfile(user.id);
           
         setAuthState({
           user: {
             ...user,
-            profile: data || undefined,
+            profile: profile || undefined,
           },
           isAuthenticated: true,
           isLoading: false,
@@ -70,21 +86,22 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
           const { user } = session;
-          // Fetch user profile
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-            
-          setAuthState({
-            user: {
-              ...user,
-              profile: data || undefined,
-            },
-            isAuthenticated: true,
-            isLoading: false,
-          });
+          
+          // Wait a short time to allow the profile to be fully committed
+          // before attempting to fetch it (handles race condition)
+          setTimeout(async () => {
+            const profile = await fetchProfile(user.id);
+              
+            setAuthState({
+              user: {
+                ...user,
+                profile: profile || undefined,
+              },
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          }, 500); // 500ms delay to allow database to commit
+          
         } else if (event === 'SIGNED_OUT') {
           setAuthState({
             user: null,
@@ -148,6 +165,9 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (profileError) {
         throw profileError;
       }
+      
+      // Don't try to immediately fetch the profile here
+      // It will be handled by the auth state change listener
       
       return true;
     } catch (error) {
