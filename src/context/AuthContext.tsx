@@ -1,11 +1,25 @@
-import React, { createContext, useState, useContext, ReactNode, FC } from 'react';
-import { User, AuthState } from '../types';
+import React, { createContext, useState, useContext, useEffect, ReactNode, FC } from 'react';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+import { Database } from '../types/database.types';
+
+type ProfileType = Database['public']['Tables']['profiles']['Row'];
+
+interface User extends SupabaseUser {
+  profile?: ProfileType;
+}
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
 
 interface AuthContextType {
   authState: AuthState;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string, userType: User['userType']) => Promise<boolean>;
-  logout: () => void;
+  register: (name: string, email: string, password: string, userType: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   redirectToDashboard: () => void;
 }
 
@@ -15,36 +29,91 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
+    isLoading: true,
   });
 
+  useEffect(() => {
+    // Check active session
+    const initializeAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        const { user } = session;
+        // Fetch user profile
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        setAuthState({
+          user: {
+            ...user,
+            profile: data || undefined,
+          },
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      } else {
+        setAuthState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+      }
+    };
+
+    initializeAuth();
+
+    // Set up auth state listener
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          const { user } = session;
+          // Fetch user profile
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+          setAuthState({
+            user: {
+              ...user,
+              profile: data || undefined,
+            },
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        } else if (event === 'SIGNED_OUT') {
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
   const login = async (email: string, password: string): Promise<boolean> => {
-    // In a real app, this would be an API call
-    // For now, we're simulating a successful login
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock successful login
-      const mockUser: User = {
-        id: '123',
-        name: 'Mock User',
+      const { error } = await supabase.auth.signInWithPassword({
         email,
-        password: '',
-        userType: 'buyer',
-        isPremium: false,
-        properties: []
-      };
-      
-      setAuthState({
-        user: mockUser,
-        isAuthenticated: true,
+        password,
       });
       
-      // Redirect to dashboard after successful login
-      redirectToDashboard();
+      if (error) {
+        throw error;
+      }
       
       return true;
     } catch (error) {
+      console.error('Error logging in:', error);
       return false;
     }
   };
@@ -53,46 +122,47 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     name: string, 
     email: string, 
     password: string, 
-    userType: User['userType']
+    userType: string
   ): Promise<boolean> => {
-    // In a real app, this would be an API call
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock successful registration
-      const mockUser: User = {
-        id: '123',
-        name,
+      // Sign up the user
+      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email,
-        password: '',
-        userType,
-        isPremium: false,
-        properties: []
-      };
-      
-      setAuthState({
-        user: mockUser,
-        isAuthenticated: true,
+        password,
       });
       
-      // Redirect to dashboard after successful registration
-      redirectToDashboard();
+      if (signUpError || !user) {
+        throw signUpError;
+      }
+      
+      // Create a profile for the user
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          name,
+          user_type: userType,
+          is_premium: false
+        });
+        
+      if (profileError) {
+        throw profileError;
+      }
       
       return true;
     } catch (error) {
+      console.error('Error registering:', error);
       return false;
     }
   };
 
-  const logout = () => {
-    setAuthState({
-      user: null,
-      isAuthenticated: false,
-    });
-    
-    // Redirect to home page after logout
-    window.location.href = '/';
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      // Redirect handled by auth state change listener
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
   
   const redirectToDashboard = () => {
