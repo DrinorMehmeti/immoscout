@@ -4,7 +4,17 @@ import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      jsxRuntime: 'automatic',
+      jsxImportSource: 'react',
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
+        ]
+      }
+    })
+  ],
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
@@ -19,5 +29,12 @@ export default defineConfig({
         register: resolve(__dirname, 'register.html'),
       },
     },
+  },
+  // Add this to clear cache issues
+  clearScreen: false,
+  // Add explicit JSX handling
+  esbuild: {
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment',
   },
 });
