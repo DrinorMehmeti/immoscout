@@ -1,0 +1,179 @@
+import React from 'react';
+import { useAuth } from '../context/AuthContext';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { Home, Building, Plus, Settings, User, LogOut, Bell, Star } from 'lucide-react';
+import { mockProperties } from '../data/mockData';
+import PropertyCard from '../components/PropertyCard';
+
+const Dashboard: React.FC = () => {
+  const { authState, logout } = useAuth();
+  
+  // Filter properties owned by the logged in user
+  const userProperties = mockProperties.filter(
+    property => property.userId === authState.user?.id
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Navbar />
+      
+      <main className="flex-grow py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Sidebar */}
+            <div className="w-full md:w-64 bg-white rounded-lg shadow-md p-4 h-fit">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
+                  <span className="text-white font-medium">{authState.user?.name.charAt(0)}</span>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">{authState.user?.name}</p>
+                  <p className="text-sm text-gray-500">{authState.user?.email}</p>
+                </div>
+              </div>
+              
+              <nav className="space-y-1">
+                <a 
+                  href="/dashboard.html" 
+                  className="flex items-center py-2 px-3 bg-blue-50 text-blue-700 rounded-md group"
+                >
+                  <Home className="h-5 w-5 mr-3" />
+                  Paneli kryesor
+                </a>
+                <a 
+                  href="#" 
+                  className="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-100 rounded-md group"
+                >
+                  <Building className="h-5 w-5 mr-3 text-gray-500 group-hover:text-gray-700" />
+                  Pronat e mia
+                </a>
+                <a 
+                  href="/add-property.html" 
+                  className="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-100 rounded-md group"
+                >
+                  <Plus className="h-5 w-5 mr-3 text-gray-500 group-hover:text-gray-700" />
+                  Shto pronë të re
+                </a>
+                <a 
+                  href="#" 
+                  className="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-100 rounded-md group"
+                >
+                  <Star className="h-5 w-5 mr-3 text-gray-500 group-hover:text-gray-700" />
+                  Bëhu premium
+                </a>
+                <a 
+                  href="#" 
+                  className="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-100 rounded-md group"
+                >
+                  <Bell className="h-5 w-5 mr-3 text-gray-500 group-hover:text-gray-700" />
+                  Njoftime
+                </a>
+                <a 
+                  href="#" 
+                  className="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-100 rounded-md group"
+                >
+                  <Settings className="h-5 w-5 mr-3 text-gray-500 group-hover:text-gray-700" />
+                  Cilësimet
+                </a>
+                <a 
+                  href="#" 
+                  className="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-100 rounded-md group"
+                >
+                  <User className="h-5 w-5 mr-3 text-gray-500 group-hover:text-gray-700" />
+                  Profili im
+                </a>
+                <button 
+                  onClick={logout}
+                  className="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-100 rounded-md group w-full text-left"
+                >
+                  <LogOut className="h-5 w-5 mr-3 text-gray-500 group-hover:text-gray-700" />
+                  Dilni
+                </button>
+              </nav>
+            </div>
+            
+            {/* Main content */}
+            <div className="flex-1">
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Mirë se vini, {authState.user?.name}!</h1>
+                <p className="text-gray-600">
+                  {authState.user?.userType === 'buyer' && 'Kërkoni pronat e preferuara dhe kontaktoni shitësit direkt.'}
+                  {authState.user?.userType === 'seller' && 'Shtoni prona për shitje dhe menaxhoni shpalljet tuaja.'}
+                  {authState.user?.userType === 'renter' && 'Kërkoni pronat me qira dhe kontaktoni pronarët direkt.'}
+                  {authState.user?.userType === 'landlord' && 'Shtoni prona me qira dhe menaxhoni shpalljet tuaja.'}
+                </p>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-bold text-gray-900">Përmbledhje e aktivitetit</h2>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="flex justify-between">
+                      <p className="text-blue-700 font-medium">Pronat aktive</p>
+                      <Building className="h-5 w-5 text-blue-700" />
+                    </div>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">{userProperties.length}</p>
+                  </div>
+                  
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <div className="flex justify-between">
+                      <p className="text-green-700 font-medium">Shikime</p>
+                      <User className="h-5 w-5 text-green-700" />
+                    </div>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">142</p>
+                  </div>
+                  
+                  <div className="bg-purple-50 rounded-lg p-4">
+                    <div className="flex justify-between">
+                      <p className="text-purple-700 font-medium">Shpalljet e fav.</p>
+                      <Star className="h-5 w-5 text-purple-700" />
+                    </div>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">5</p>
+                  </div>
+                </div>
+              </div>
+              
+              {userProperties.length > 0 ? (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-bold text-gray-900">Pronat e mia</h2>
+                    <a href="#" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                      Shiko të gjitha
+                    </a>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {userProperties.map(property => (
+                      <PropertyCard key={property.id} property={property} />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                  <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900">Ende nuk keni asnjë pronë</h3>
+                  <p className="mt-2 text-gray-500 mb-6">Shtoni pronën tuaj të parë për ta shfaqur në platformën tonë</p>
+                  <a 
+                    href="/add-property.html" 
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Shto pronë të re
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      <Footer />
+    </div>
+  );
+};
+
+export default Dashboard;
