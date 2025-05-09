@@ -25,10 +25,10 @@ const Dashboard: React.FC = () => {
             <div className="w-full md:w-64 bg-white rounded-lg shadow-md p-4 h-fit">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
-                  <span className="text-white font-medium">{authState.user?.name.charAt(0)}</span>
+                  <span className="text-white font-medium">{authState.user?.profile?.name.charAt(0)}</span>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">{authState.user?.name}</p>
+                  <p className="font-medium text-gray-900">{authState.user?.profile?.name}</p>
                   <p className="text-sm text-gray-500">{authState.user?.email}</p>
                 </div>
               </div>
@@ -96,12 +96,12 @@ const Dashboard: React.FC = () => {
             {/* Main content */}
             <div className="flex-1">
               <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Mirë se vini, {authState.user?.name}!</h1>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Mirë se vini, {authState.user?.profile?.name}!</h1>
                 <p className="text-gray-600">
-                  {authState.user?.userType === 'buyer' && 'Kërkoni pronat e preferuara dhe kontaktoni shitësit direkt.'}
-                  {authState.user?.userType === 'seller' && 'Shtoni prona për shitje dhe menaxhoni shpalljet tuaja.'}
-                  {authState.user?.userType === 'renter' && 'Kërkoni pronat me qira dhe kontaktoni pronarët direkt.'}
-                  {authState.user?.userType === 'landlord' && 'Shtoni prona me qira dhe menaxhoni shpalljet tuaja.'}
+                  {authState.user?.profile?.user_type === 'buyer' && 'Kërkoni pronat e preferuara dhe kontaktoni shitësit direkt.'}
+                  {authState.user?.profile?.user_type === 'seller' && 'Shtoni prona për shitje dhe menaxhoni shpalljet tuaja.'}
+                  {authState.user?.profile?.user_type === 'renter' && 'Kërkoni pronat me qira dhe kontaktoni pronarët direkt.'}
+                  {authState.user?.profile?.user_type === 'landlord' && 'Shtoni prona me qira dhe menaxhoni shpalljet tuaja.'}
                 </p>
               </div>
               
