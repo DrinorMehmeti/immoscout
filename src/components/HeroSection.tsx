@@ -13,7 +13,7 @@ const HeroSection: React.FC = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="text-center">
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
-            Drinori
+            Drinori+
           </h1>
           <p className="mt-6 max-w-2xl mx-auto text-xl">
             Platforma më e madhe e patundshmërive në Kosovë me mijëra prona për shitje dhe qiradhënie
