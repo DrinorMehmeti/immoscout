@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode, FC } 
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { Database } from '../types/database.types';
+import { useNavigate } from 'react-router-dom';
 
 type ProfileType = Database['public']['Tables']['profiles']['Row'];
 
@@ -20,7 +21,6 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, password: string, userType: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  redirectToDashboard: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -184,15 +184,9 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       console.error('Error logging out:', error);
     }
   };
-  
-  const redirectToDashboard = () => {
-    // In a real app with routing, you'd use a router to navigate
-    // For this demo, we'll use window.location
-    window.location.href = '/dashboard.html';
-  };
 
   return (
-    <AuthContext.Provider value={{ authState, login, register, logout, redirectToDashboard }}>
+    <AuthContext.Provider value={{ authState, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

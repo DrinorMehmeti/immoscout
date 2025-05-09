@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Link, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import PropertyGrid from './components/PropertyGrid';
@@ -6,7 +7,13 @@ import PremiumFeatures from './components/PremiumFeatures';
 import Footer from './components/Footer';
 import { mockProperties } from './data/mockData';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Building, ArrowRight, Home, Check } from 'lucide-react';
+import { Building, ArrowRight, Home, Check, Star } from 'lucide-react';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import ListingsPage from './pages/ListingsPage';
+import MyPropertiesPage from './pages/MyPropertiesPage';
+import PremiumPage from './pages/PremiumPage';
 
 // The main app content for non-authenticated users
 const LandingPage = () => {
@@ -27,9 +34,9 @@ const LandingPage = () => {
         <div className="mt-12">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-semibold text-gray-900">Të rejat në treg</h3>
-            <a href="/listings.html" className="text-blue-600 hover:text-blue-800 font-medium">
+            <Link to="/listings" className="text-blue-600 hover:text-blue-800 font-medium">
               Shiko të gjitha
-            </a>
+            </Link>
           </div>
           <PropertyGrid properties={mockProperties.slice(0, 4)} />
         </div>
@@ -121,15 +128,15 @@ const LandingPage = () => {
           </div>
           
           <div className="mt-12 text-center">
-            <a 
-              href="/register.html" 
+            <Link 
+              to="/register" 
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Regjistrohu falas tani
               <ArrowRight className="ml-2 h-5 w-5" />
-            </a>
+            </Link>
             <p className="mt-3 text-sm text-gray-500">
-              Tashmë keni llogari? <a href="/login.html" className="text-blue-600 font-medium">Kyçuni</a>
+              Tashmë keni llogari? <Link to="/login" className="text-blue-600 font-medium">Kyçuni</Link>
             </p>
           </div>
         </div>
@@ -180,53 +187,66 @@ const LandingPage = () => {
         </div>
         
         <div className="mt-10 text-center">
-          <a 
-            href="/register.html" 
+          <Link 
+            to="/register" 
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Filloni udhëtimin tuaj tani
             <ArrowRight className="ml-2 h-5 w-5" />
-          </a>
+          </Link>
         </div>
       </section>
     </>
   );
 };
 
+// Protected Route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { authState } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authState.isAuthenticated && !authState.isLoading) {
+      navigate('/login');
+    }
+  }, [authState.isAuthenticated, authState.isLoading, navigate]);
+
+  if (authState.isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  return authState.isAuthenticated ? <>{children}</> : null;
+};
+
 function App() {
   const { authState } = useAuth();
-  
-  // Handle hash-based navigation
-  useEffect(() => {
-    const handleHashChange = () => {
-      if (window.location.hash === '#login') {
-        window.location.href = '/login.html';
-      } else if (window.location.hash === '#register') {
-        window.location.href = '/register.html';
-      }
-    };
-    
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange(); // Check on initial load
-    
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
-  }, []);
+  const navigate = useNavigate();
 
-  // If user is logged in, redirect to dashboard
+  // Redirect authenticated users away from auth pages
   useEffect(() => {
     if (authState.isAuthenticated) {
-      window.location.href = '/dashboard.html';
+      const path = window.location.pathname;
+      if (path === '/login' || path === '/register') {
+        navigate('/dashboard');
+      }
     }
-  }, [authState.isAuthenticated]);
+  }, [authState.isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
       
       <main className="flex-grow">
-        <LandingPage />
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/listings" element={<ListingsPage />} />
+          <Route path="/my-properties" element={<ProtectedRoute><MyPropertiesPage /></ProtectedRoute>} />
+          <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
       
       <Footer />

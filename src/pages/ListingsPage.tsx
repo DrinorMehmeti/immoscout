@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { MapPin, Building, Euro, Search, Filter, Star, Grid3X3, List } from 'lucide-react';
 import { mockProperties } from '../data/mockData';
 import PropertyCard from '../components/PropertyCard';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 
 const ListingsPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -53,8 +51,6 @@ const ListingsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
-      
       <main className="flex-grow pt-6 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="bg-white p-4 rounded-lg shadow-md mb-6">
           <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
@@ -279,8 +275,6 @@ const ListingsPage: React.FC = () => {
           </div>
         )}
       </main>
-      
-      <Footer />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Menu, X, User, Home, LogOut, Building, Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,37 +13,37 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <a href="/" className="flex items-center">
+              <Link to="/" className="flex items-center">
                 <Home className="h-8 w-8 text-blue-600" />
                 <span className="ml-2 text-xl font-bold text-gray-900">RealEstate Kosovo</span>
-              </a>
+              </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <a href="/" className="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              <Link to="/" className="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Ballina
-              </a>
-              <a href="/listings.html" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              </Link>
+              <Link to="/listings" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Shpallje
-              </a>
-              <a href="#" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              </Link>
+              <Link to="/about" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Rreth nesh
-              </a>
-              <a href="#" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              </Link>
+              <Link to="/contact" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Kontakt
-              </a>
+              </Link>
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
             {authState.isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <a href="/dashboard.html" className="text-gray-500 hover:text-gray-700 flex items-center">
+                <Link to="/dashboard" className="text-gray-500 hover:text-gray-700 flex items-center">
                   <Building className="h-5 w-5 mr-1" />
                   <span>Paneli im</span>
-                </a>
-                <a href="/add-property.html" className="text-gray-500 hover:text-gray-700 flex items-center">
+                </Link>
+                <Link to="/add-property" className="text-gray-500 hover:text-gray-700 flex items-center">
                   <Plus className="h-5 w-5 mr-1" />
                   <span>Shto pronë</span>
-                </a>
+                </Link>
                 <div className="h-6 w-px bg-gray-300"></div>
                 <span className="text-sm font-medium text-gray-700">Përshëndetje, {authState.user?.profile?.name}</span>
                 <button 
@@ -55,13 +56,13 @@ const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <a href="/login.html" className="text-gray-500 hover:text-gray-700 flex items-center">
+                <Link to="/login" className="text-gray-500 hover:text-gray-700 flex items-center">
                   <User className="h-5 w-5 mr-1" />
                   <span>Kyçu</span>
-                </a>
-                <a href="/register.html" className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium">
+                </Link>
+                <Link to="/register" className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium">
                   Regjistrohu
-                </a>
+                </Link>
               </div>
             )}
           </div>
@@ -85,26 +86,26 @@ const Navbar: React.FC = () => {
       {isMenuOpen && (
         <div className="sm:hidden">
           <div className="pt-2 pb-3 space-y-1">
-            <a href="/" className="bg-blue-50 border-blue-500 text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+            <Link to="/" className="bg-blue-50 border-blue-500 text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
               Ballina
-            </a>
-            <a href="/listings.html" className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+            </Link>
+            <Link to="/listings" className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
               Shpallje
-            </a>
-            <a href="#" className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+            </Link>
+            <Link to="/about" className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
               Rreth nesh
-            </a>
-            <a href="#" className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+            </Link>
+            <Link to="/contact" className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
               Kontakt
-            </a>
+            </Link>
             {authState.isAuthenticated && (
               <>
-                <a href="/dashboard.html" className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                <Link to="/dashboard" className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
                   Paneli im
-                </a>
-                <a href="/add-property.html" className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                </Link>
+                <Link to="/add-property" className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
                   Shto pronë
-                </a>
+                </Link>
               </>
             )}
           </div>
@@ -130,13 +131,13 @@ const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex flex-col space-y-3 px-4">
-                <a href="/login.html" className="text-base font-medium text-gray-500 hover:text-gray-700 flex items-center">
+                <Link to="/login" className="text-base font-medium text-gray-500 hover:text-gray-700 flex items-center">
                   <User className="h-5 w-5 mr-2" />
                   <span>Kyçu</span>
-                </a>
-                <a href="/register.html" className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium text-center">
+                </Link>
+                <Link to="/register" className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium text-center">
                   Regjistrohu
-                </a>
+                </Link>
               </div>
             )}
           </div>
