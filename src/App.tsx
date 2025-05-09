@@ -1,17 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import PropertyGrid from './components/PropertyGrid';
 import PremiumFeatures from './components/PremiumFeatures';
 import Footer from './components/Footer';
-import AuthModal from './components/AuthModal';
 import { mockProperties } from './data/mockData';
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalView, setAuthModalView] = useState<'login' | 'register'>('login');
-  
   // Handle hash-based navigation
   useEffect(() => {
     const handleHashChange = () => {
