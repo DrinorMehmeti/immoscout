@@ -2,10 +2,9 @@ import { useEffect } from 'react';
 import { Link, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
-import PropertyGrid from './components/PropertyGrid';
+import HomepageProperties from './components/HomepageProperties';
 import PremiumFeatures from './components/PremiumFeatures';
 import Footer from './components/Footer';
-import { mockProperties } from './data/mockData';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
 import { Building, ArrowRight, Home, Check, Star } from 'lucide-react';
@@ -25,26 +24,7 @@ const LandingPage = () => {
     <>
       <HeroSection />
       
-      <section className={`py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto ${darkMode ? 'text-white' : ''}`}>
-        <div className="text-center mb-10">
-          <h2 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} sm:text-4xl`}>
-            Shpalljet e fundit
-          </h2>
-          <p className={`mt-3 max-w-2xl mx-auto text-xl ${darkMode ? 'text-gray-300' : 'text-gray-500'} sm:mt-4`}>
-            Shikoni pronat më të reja të shtuara në platformën tonë
-          </p>
-        </div>
-        
-        <div className="mt-12">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Të rejat në treg</h3>
-            <Link to="/listings" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
-              Shiko të gjitha
-            </Link>
-          </div>
-          <PropertyGrid properties={mockProperties.slice(0, 4)} />
-        </div>
-      </section>
+      <HomepageProperties />
       
       <section className={`${darkMode ? 'bg-gray-800' : 'bg-blue-50'} py-16 px-4 sm:px-6 lg:px-8`}>
         <div className="max-w-7xl mx-auto">
