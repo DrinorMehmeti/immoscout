@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, User, Home, LogOut, Building, Plus, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { Link, useLocation } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const { authState, logout } = useAuth();
+  const { darkMode, toggleDarkMode } = useTheme();
   const location = useLocation();
   
   // Handle scroll effect for navbar
@@ -24,22 +25,20 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Toggle dark mode (you would need to implement actual dark mode functionality)
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    // Implement actual dark mode toggle functionality here
-  };
-
   const isActive = (path: string) => {
     return location.pathname === path;
   };
 
   return (
     <nav 
-      className={`fixed w-full z-50 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/95 backdrop-blur-sm shadow-md' 
-          : 'bg-white shadow-sm'
+      className={`fixed w-full z-[100] transition-all duration-300 ${
+        darkMode 
+          ? scrolled 
+            ? 'bg-gray-900/95 backdrop-blur-sm shadow-md' 
+            : 'bg-gray-900 shadow-sm'
+          : scrolled 
+            ? 'bg-white/95 backdrop-blur-sm shadow-md' 
+            : 'bg-white shadow-sm'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,7 +50,7 @@ const Navbar: React.FC = () => {
                 <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-2 rounded-lg mr-2 transform group-hover:scale-105 transition-all duration-200">
                   <Home className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800">
+                <span className={`text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800 ${darkMode ? 'dark:from-blue-400 dark:to-blue-600' : ''}`}>
                   RealEstate Kosovo
                 </span>
               </Link>
@@ -77,7 +76,7 @@ const Navbar: React.FC = () => {
             {/* Dark mode toggle button */}
             <button 
               onClick={toggleDarkMode}
-              className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-all"
+              className={`p-2 ${darkMode ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'} rounded-full transition-all`}
               aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
             >
               {darkMode ? (
@@ -92,7 +91,7 @@ const Navbar: React.FC = () => {
               <div className="flex items-center space-x-4">
                 <Link 
                   to="/dashboard" 
-                  className="flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors px-3 py-2 rounded-md hover:bg-blue-50"
+                  className={`flex items-center text-sm font-medium ${darkMode ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'} transition-colors px-3 py-2 rounded-md`}
                 >
                   <Building className="h-5 w-5 mr-1.5" />
                   <span>Paneli im</span>
@@ -106,11 +105,11 @@ const Navbar: React.FC = () => {
                   <span>Shto pronë</span>
                 </Link>
                 
-                <div className="border-l border-gray-200 h-6 mx-2"></div>
+                <div className={`border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} h-6 mx-2`}></div>
                 
                 <div className="group relative">
-                  <button className="flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
-                    <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white mr-2 ring-2 ring-white">
+                  <button className={`flex items-center text-sm font-medium ${darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-blue-600'}`}>
+                    <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white mr-2 ring-2 ring-white dark:ring-gray-800">
                       {authState.user?.profile?.name.charAt(0)}
                     </div>
                     <span className="hidden xl:block">
@@ -118,19 +117,19 @@ const Navbar: React.FC = () => {
                     </span>
                   </button>
                   
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                    <Link to="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
+                  <div className={`absolute right-0 mt-2 w-48 ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200`}>
+                    <Link to="/dashboard" className={`block px-4 py-2 text-sm ${darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-blue-50'}`}>
                       Paneli im
                     </Link>
-                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
+                    <Link to="/profile" className={`block px-4 py-2 text-sm ${darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-blue-50'}`}>
                       Profili im
                     </Link>
-                    <Link to="/my-properties" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
+                    <Link to="/my-properties" className={`block px-4 py-2 text-sm ${darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-blue-50'}`}>
                       Pronat e mia
                     </Link>
                     <button 
                       onClick={logout}
-                      className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      className={`w-full text-left block px-4 py-2 text-sm ${darkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-red-50'}`}
                     >
                       Dilni
                     </button>
@@ -139,7 +138,7 @@ const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-3">
-                <Link to="/login" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                <Link to="/login" className={`${darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-blue-600'} px-3 py-2 rounded-md text-sm font-medium transition-colors`}>
                   Kyçu
                 </Link>
                 <Link to="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm hover:shadow">
@@ -162,7 +161,9 @@ const Navbar: React.FC = () => {
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className={`p-2 rounded-md ${
-                isMenuOpen ? 'bg-gray-100' : 'text-gray-500 hover:text-gray-600 hover:bg-gray-100'
+                darkMode
+                  ? isMenuOpen ? 'bg-gray-700' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  : isMenuOpen ? 'bg-gray-100' : 'text-gray-500 hover:text-gray-600 hover:bg-gray-100'
               } focus:outline-none transition-colors`}
             >
               <span className="sr-only">Open main menu</span>
@@ -178,7 +179,7 @@ const Navbar: React.FC = () => {
 
       {/* Mobile menu */}
       <div className={`md:hidden transition-all duration-300 ${isMenuOpen ? 'max-h-screen' : 'max-h-0 invisible'} overflow-hidden`}>
-        <div className="px-2 pt-2 pb-3 space-y-1 bg-white shadow-md border-t">
+        <div className={`px-2 pt-2 pb-3 space-y-1 ${darkMode ? 'bg-gray-900 shadow-md border-t border-gray-800' : 'bg-white shadow-md border-t'}`}>
           <MobileNavLink to="/" isActive={isActive('/')}>
             <Home className="mr-3 h-5 w-5" />
             Ballina
@@ -194,9 +195,31 @@ const Navbar: React.FC = () => {
             Kontakt
           </MobileNavLink>
           
+          {/* Dark mode toggle in mobile menu */}
+          <button 
+            onClick={toggleDarkMode}
+            className={`w-full flex items-center px-3 py-2 text-base font-medium rounded-md ${
+              darkMode 
+                ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            {darkMode ? (
+              <>
+                <Sun className="mr-3 h-5 w-5" />
+                Light Mode
+              </>
+            ) : (
+              <>
+                <Moon className="mr-3 h-5 w-5" />
+                Dark Mode
+              </>
+            )}
+          </button>
+          
           {authState.isAuthenticated ? (
             <>
-              <div className="border-t border-gray-200 my-3"></div>
+              <div className={`border-t ${darkMode ? 'border-gray-800' : 'border-gray-200'} my-3`}></div>
               
               <MobileNavLink to="/dashboard" isActive={isActive('/dashboard')}>
                 <Building className="mr-3 h-5 w-5" />
@@ -215,7 +238,9 @@ const Navbar: React.FC = () => {
               
               <button
                 onClick={logout}
-                className="w-full flex items-center px-3 py-2 text-base font-medium rounded-md text-red-600 hover:bg-red-50"
+                className={`w-full flex items-center px-3 py-2 text-base font-medium rounded-md ${
+                  darkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-red-50'
+                }`}
               >
                 <LogOut className="mr-3 h-5 w-5" />
                 Dilni
@@ -225,7 +250,11 @@ const Navbar: React.FC = () => {
             <div className="pt-4 flex flex-col space-y-3">
               <Link 
                 to="/login" 
-                className="w-full text-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className={`w-full text-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
+                  darkMode 
+                    ? 'border-gray-700 bg-gray-800 text-white hover:bg-gray-700' 
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 Kyçu
               </Link>
@@ -251,13 +280,19 @@ interface NavLinkProps {
 }
 
 const NavLink: React.FC<NavLinkProps> = ({ to, children, isActive }) => {
+  const { darkMode } = useTheme();
+  
   return (
     <Link
       to={to}
       className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
         isActive
-          ? 'bg-blue-50 text-blue-600'
-          : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+          ? darkMode 
+            ? 'bg-gray-800 text-white' 
+            : 'bg-blue-50 text-blue-600'
+          : darkMode
+            ? 'text-gray-300 hover:text-white hover:bg-gray-700'
+            : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
       }`}
     >
       {children}
@@ -273,13 +308,19 @@ interface MobileNavLinkProps {
 }
 
 const MobileNavLink: React.FC<MobileNavLinkProps> = ({ to, children, isActive }) => {
+  const { darkMode } = useTheme();
+  
   return (
     <Link
       to={to}
       className={`flex items-center px-3 py-2 text-base font-medium rounded-md ${
         isActive
-          ? 'bg-blue-50 text-blue-600'
-          : 'text-gray-700 hover:bg-gray-50'
+          ? darkMode
+            ? 'bg-gray-800 text-white'
+            : 'bg-blue-50 text-blue-600'
+          : darkMode
+            ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
+            : 'text-gray-700 hover:bg-gray-50'
       }`}
     >
       {children}

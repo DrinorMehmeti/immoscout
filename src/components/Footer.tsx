@@ -1,9 +1,12 @@
 import React from 'react';
 import { Home, Mail, Phone, ExternalLink, Facebook, Instagram, Twitter } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const Footer: React.FC = () => {
+  const { darkMode } = useTheme();
+  
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className={darkMode ? "bg-gray-950 text-white" : "bg-gray-900 text-white"}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
@@ -94,7 +97,7 @@ const Footer: React.FC = () => {
           </div>
         </div>
         
-        <div className="mt-12 pt-8 border-t border-gray-800 text-gray-400 text-sm">
+        <div className={`mt-12 pt-8 border-t ${darkMode ? 'border-gray-800' : 'border-gray-800'} text-gray-400 text-sm`}>
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p>© 2025 RealEstate Kosovo. Të gjitha të drejtat e rezervuara.</p>
             <div className="mt-4 md:mt-0 flex space-x-6">
