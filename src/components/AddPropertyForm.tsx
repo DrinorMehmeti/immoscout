@@ -80,6 +80,40 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     setImages(newImages);
   };
 
+  // Function to create the bucket if it doesn't exist
+  const ensureBucketExists = async (bucketName: string) => {
+    try {
+      // Check if bucket exists
+      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+      
+      if (listError) {
+        console.error('Error checking buckets:', listError);
+        return false;
+      }
+      
+      const bucketExists = buckets.some(bucket => bucket.name === bucketName);
+      
+      if (!bucketExists) {
+        // Create the bucket
+        const { error: createError } = await supabase.storage.createBucket(bucketName, {
+          public: true // Make the bucket public so we can access images without authentication
+        });
+        
+        if (createError) {
+          console.error('Error creating bucket:', createError);
+          return false;
+        }
+        
+        console.log(`Bucket ${bucketName} created successfully`);
+      }
+      
+      return true;
+    } catch (err) {
+      console.error('Error ensuring bucket exists:', err);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -94,13 +128,21 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       const uploadedImageUrls: string[] = [];
       
       if (images.length > 0) {
+        // Ensure the bucket exists before uploading
+        const bucketName = 'property-images';
+        const bucketExists = await ensureBucketExists(bucketName);
+        
+        if (!bucketExists) {
+          throw new Error('Nuk mund të krijohet bucket-i për ruajtjen e imazheve. Ju lutemi kontaktoni administratorin.');
+        }
+        
         for (const image of images) {
           const fileExt = image.name.split('.').pop();
           const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
           const filePath = `properties/${authState.user.id}/${fileName}`;
           
           const { error: uploadError, data } = await supabase.storage
-            .from('property-images')
+            .from(bucketName)
             .upload(filePath, image);
             
           if (uploadError) {
@@ -108,7 +150,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           }
           
           const { data: { publicUrl } } = supabase.storage
-            .from('property-images')
+            .from(bucketName)
             .getPublicUrl(filePath);
             
           uploadedImageUrls.push(publicUrl);
@@ -477,7 +519,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               <button
                 type="button"
                 onClick={handleAddFeature}
-                className="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700"
+                className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-r-md"
               >
                 Shto
               </button>
