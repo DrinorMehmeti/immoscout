@@ -16,6 +16,7 @@ const HomepageProperties: React.FC = () => {
       try {
         setLoading(true);
         
+        // Fetch properties with latest first
         const { data, error } = await supabase
           .from('properties')
           .select('*')
@@ -27,9 +28,12 @@ const HomepageProperties: React.FC = () => {
           throw error;
         }
         
-        // Log the properties data for debugging
-        console.log('Fetched properties:', data);
-        setProperties(data || []);
+        // Log the properties for debugging
+        console.log('Neueste Immobilien geladen:', data);
+        
+        if (data) {
+          setProperties(data);
+        }
       } catch (err) {
         console.error('Error fetching properties:', err);
         setError('Ndodhi një gabim gjatë marrjes së të dhënave');

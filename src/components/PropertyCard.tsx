@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Property } from '../types';
 import { MapPin, Euro, BedDouble, Bath, Square, Star, Image } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 interface PropertyCardProps {
   property: Property;
@@ -11,6 +12,37 @@ interface PropertyCardProps {
 const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const { darkMode } = useTheme();
   const [imageError, setImageError] = useState(false);
+  const [propertyImages, setPropertyImages] = useState<string[]>([]);
+  
+  // Load property images from database
+  useEffect(() => {
+    const loadImagesFromDatabase = async () => {
+      try {
+        if (property.id) {
+          // Fetch the property again to ensure we have the latest images
+          const { data, error } = await supabase
+            .from('properties')
+            .select('images')
+            .eq('id', property.id)
+            .single();
+            
+          if (error) {
+            console.error('Error fetching property images:', error);
+            return;
+          }
+          
+          if (data && data.images && data.images.length > 0) {
+            console.log(`Loaded images for property ${property.id}:`, data.images);
+            setPropertyImages(data.images);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading images:', err);
+      }
+    };
+    
+    loadImagesFromDatabase();
+  }, [property.id]);
   
   // Format price with thousands separator
   const formattedPrice = property.price.toLocaleString();
@@ -31,10 +63,18 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     }
   };
   
-  // Determine image URL with fallbacks
-  const imageUrl = imageError || !property.images || property.images.length === 0 
-    ? getDefaultImage() 
-    : property.images[0];
+  // Determine image URL with fallbacks - first try database images, then property images, then fallback
+  const imageUrl = imageError || 
+    (propertyImages.length === 0 && (!property.images || property.images.length === 0))
+      ? getDefaultImage() 
+      : propertyImages.length > 0 
+        ? propertyImages[0]
+        : property.images![0];
+
+  // Create a badge for the listing type (rent or sale)
+  const listingTypeLabel = property.listing_type === 'rent' 
+    ? { text: 'Me qira', bg: 'bg-blue-600' } 
+    : { text: 'Në shitje', bg: 'bg-green-600' };
 
   return (
     <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden ${property.featured ? 'ring-2 ring-blue-500' : ''}`}>
@@ -51,8 +91,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
             Premium
           </div>
         )}
-        <div className="absolute bottom-0 left-0 bg-blue-600 text-white px-2 py-1 text-xs font-bold">
-          {property.listing_type === 'rent' ? 'Me qira' : 'Në shitje'}
+        <div className={`absolute bottom-0 left-0 ${listingTypeLabel.bg} text-white px-2 py-1 text-xs font-bold`}>
+          {listingTypeLabel.text}
         </div>
       </div>
       <div className="p-4">
