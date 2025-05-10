@@ -14,6 +14,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   
   // Form fields
   const [title, setTitle] = useState('');
@@ -103,6 +104,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
+    setUploadErrors([]);
     
     try {
       if (!authState.isAuthenticated || !authState.user) {
@@ -111,6 +113,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       
       // Upload images to Supabase Storage
       const uploadedImageUrls: string[] = [];
+      const uploadErrorList: string[] = [];
       
       if (images.length > 0) {
         // Check if the bucket exists before uploading
@@ -118,8 +121,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         const bucketExists = await checkBucketExists(bucketName);
         
         if (!bucketExists) {
-          console.warn('The storage bucket does not exist. Images will not be uploaded.');
-          // We'll continue without images
+          uploadErrorList.push('Storage bucket nuk ekziston. Fotot nuk do të ngarkohen.');
         } else {
           // Upload images only if the bucket exists
           for (const image of images) {
@@ -132,8 +134,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               .upload(filePath, image);
               
             if (uploadError) {
-              console.error('Error uploading image:', uploadError);
-              // Continue with the next image
+              uploadErrorList.push(`Gabim gjatë ngarkimit të fotos: ${image.name} (${uploadError.message})`);
               continue;
             }
             
@@ -167,7 +168,12 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         });
         
       if (insertError) {
-        throw new Error('Error gjatë ruajtjes së të dhënave: ' + insertError.message);
+        uploadErrorList.push('Gabim gjatë ruajtjes së të dhënave: ' + insertError.message);
+      }
+      
+      setUploadErrors(uploadErrorList);
+      if (uploadErrorList.length > 0) {
+        throw new Error('Disa gabime ndodhën gjatë ngarkimit. Shiko detajet më poshtë.');
       }
       
       setSuccess(true);
@@ -208,7 +214,16 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       {error && (
         <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg flex items-start">
           <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-          <p>{error}</p>
+          <div>
+            <p>{error}</p>
+            {uploadErrors.length > 0 && (
+              <ul className="mt-2 list-disc list-inside text-xs">
+                {uploadErrors.map((err, idx) => (
+                  <li key={idx}>{err}</li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
       
