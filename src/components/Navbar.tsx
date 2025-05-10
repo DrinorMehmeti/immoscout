@@ -31,7 +31,7 @@ const Navbar: React.FC = () => {
 
   return (
     <nav 
-      className={`fixed w-full z-50 transition-all duration-300 ${
+      className={`fixed w-full z-[100] transition-all duration-300 ${
         darkMode 
           ? scrolled 
             ? 'bg-gray-900/95 backdrop-blur-sm shadow-md' 
