@@ -80,8 +80,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     setImages(newImages);
   };
 
-  // Function to create the bucket if it doesn't exist
-  const ensureBucketExists = async (bucketName: string) => {
+  // Function to check if the bucket exists
+  const checkBucketExists = async (bucketName: string) => {
     try {
       // Check if bucket exists
       const { data: buckets, error: listError } = await supabase.storage.listBuckets();
@@ -92,24 +92,9 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       }
       
       const bucketExists = buckets.some(bucket => bucket.name === bucketName);
-      
-      if (!bucketExists) {
-        // Create the bucket
-        const { error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true // Make the bucket public so we can access images without authentication
-        });
-        
-        if (createError) {
-          console.error('Error creating bucket:', createError);
-          return false;
-        }
-        
-        console.log(`Bucket ${bucketName} created successfully`);
-      }
-      
-      return true;
+      return bucketExists;
     } catch (err) {
-      console.error('Error ensuring bucket exists:', err);
+      console.error('Error checking if bucket exists:', err);
       return false;
     }
   };
@@ -128,32 +113,36 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       const uploadedImageUrls: string[] = [];
       
       if (images.length > 0) {
-        // Ensure the bucket exists before uploading
+        // Check if the bucket exists before uploading
         const bucketName = 'property-images';
-        const bucketExists = await ensureBucketExists(bucketName);
+        const bucketExists = await checkBucketExists(bucketName);
         
         if (!bucketExists) {
-          throw new Error('Nuk mund të krijohet bucket-i për ruajtjen e imazheve. Ju lutemi kontaktoni administratorin.');
-        }
-        
-        for (const image of images) {
-          const fileExt = image.name.split('.').pop();
-          const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-          const filePath = `properties/${authState.user.id}/${fileName}`;
-          
-          const { error: uploadError, data } = await supabase.storage
-            .from(bucketName)
-            .upload(filePath, image);
+          console.warn('The storage bucket does not exist. Images will not be uploaded.');
+          // We'll continue without images
+        } else {
+          // Upload images only if the bucket exists
+          for (const image of images) {
+            const fileExt = image.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+            const filePath = `properties/${authState.user.id}/${fileName}`;
             
-          if (uploadError) {
-            throw new Error('Error gjatë ngarkimit të imazheve: ' + uploadError.message);
+            const { error: uploadError, data } = await supabase.storage
+              .from(bucketName)
+              .upload(filePath, image);
+              
+            if (uploadError) {
+              console.error('Error uploading image:', uploadError);
+              // Continue with the next image
+              continue;
+            }
+            
+            const { data: { publicUrl } } = supabase.storage
+              .from(bucketName)
+              .getPublicUrl(filePath);
+              
+            uploadedImageUrls.push(publicUrl);
           }
-          
-          const { data: { publicUrl } } = supabase.storage
-            .from(bucketName)
-            .getPublicUrl(filePath);
-            
-          uploadedImageUrls.push(publicUrl);
         }
       }
       
