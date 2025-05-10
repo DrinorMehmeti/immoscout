@@ -34,9 +34,27 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
 
   // Check if the bucket exists on component mount
   useEffect(() => {
-    checkBucketExists('property-images').then(exists => {
-      setBucketStatus(exists ? 'available' : 'unavailable');
-    });
+    const checkBucket = async () => {
+      try {
+        const { data: buckets, error } = await supabase.storage.listBuckets();
+        
+        if (error) {
+          console.error('Error checking buckets:', error);
+          setBucketStatus('unavailable');
+          return;
+        }
+        
+        const bucketExists = buckets.some(bucket => bucket.name === 'property-images');
+        setBucketStatus(bucketExists ? 'available' : 'unavailable');
+        
+        console.log('Bucket status:', bucketExists ? 'available' : 'unavailable');
+      } catch (err) {
+        console.error('Exception checking buckets:', err);
+        setBucketStatus('unavailable');
+      }
+    };
+    
+    checkBucket();
   }, []);
 
   // Clean up preview URLs when component unmounts
@@ -88,25 +106,6 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     setImages(newImages);
   };
 
-  // Function to check if the bucket exists
-  const checkBucketExists = async (bucketName: string) => {
-    try {
-      // Check if bucket exists
-      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-      
-      if (listError) {
-        console.error('Error checking buckets:', listError);
-        return false;
-      }
-      
-      const bucketExists = buckets.some(bucket => bucket.name === bucketName);
-      return bucketExists;
-    } catch (err) {
-      console.error('Error checking if bucket exists:', err);
-      return false;
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -120,16 +119,10 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       // Upload images to Supabase Storage
       const uploadedImageUrls: string[] = [];
       
-      if (images.length > 0) {
-        // Check if the bucket exists before uploading
+      if (images.length > 0 && bucketStatus === 'available') {
         const bucketName = 'property-images';
-        const bucketExists = await checkBucketExists(bucketName);
         
-        if (!bucketExists) {
-          console.warn('Storage bucket "property-images" is not available. Images will not be uploaded.');
-          // We will proceed without images
-        } else {
-          // Upload images only if the bucket exists
+        try {
           for (const image of images) {
             const fileExt = image.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
@@ -141,8 +134,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               
             if (uploadError) {
               console.error('Error uploading image:', uploadError);
-              // Continue with the next image
-              continue;
+              continue; // Skip this image but continue with others
             }
             
             const { data: { publicUrl } } = supabase.storage
@@ -151,6 +143,9 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               
             uploadedImageUrls.push(publicUrl);
           }
+        } catch (uploadErr) {
+          console.error('Error in upload process:', uploadErr);
+          // Continue without images
         }
       }
       
@@ -169,7 +164,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
           area: area ? parseFloat(area) : null,
           features,
-          images: uploadedImageUrls,
+          images: uploadedImageUrls.length > 0 ? uploadedImageUrls : [],
           status: 'active',
           featured: false
         });
@@ -551,7 +546,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   </button>
                 </div>
               ))}
-              {previewUrls.length < 10 && bucketStatus !== 'unavailable' && (
+              {previewUrls.length < 10 && bucketStatus === 'available' && (
                 <label className={`w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed rounded-md cursor-pointer ${
                   darkMode ? 'border-gray-600 hover:border-gray-500' : 'border-gray-300 hover:border-gray-400'
                 }`}>
@@ -567,9 +562,15 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                 </label>
               )}
             </div>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Ngarko deri në 10 foto të pronës. Formati: JPG, PNG. Madhësia max: 5MB.
-            </p>
+            {bucketStatus === 'available' ? (
+              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Ngarko deri në 10 foto të pronës. Formati: JPG, PNG. Madhësia max: 5MB.
+              </p>
+            ) : (
+              <p className={`text-sm ${darkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>
+                Ngarkimi i fotove nuk është i disponueshëm për momentin. Mund të vazhdoni të shtoni pronën pa foto.
+              </p>
+            )}
           </div>
           
           <div className="pt-4">
