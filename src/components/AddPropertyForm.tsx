@@ -30,6 +30,14 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [featureInput, setFeatureInput] = useState('');
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [bucketStatus, setBucketStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
+
+  // Check if the bucket exists on component mount
+  useEffect(() => {
+    checkBucketExists('property-images').then(exists => {
+      setBucketStatus(exists ? 'available' : 'unavailable');
+    });
+  }, []);
 
   // Clean up preview URLs when component unmounts
   useEffect(() => {
@@ -118,8 +126,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         const bucketExists = await checkBucketExists(bucketName);
         
         if (!bucketExists) {
-          console.warn('The storage bucket does not exist. Images will not be uploaded.');
-          // We'll continue without images
+          console.warn('Storage bucket "property-images" is not available. Images will not be uploaded.');
+          // We will proceed without images
         } else {
           // Upload images only if the bucket exists
           for (const image of images) {
@@ -216,6 +224,13 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg flex items-start">
           <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
           <p>Prona u shtua me sukses!</p>
+        </div>
+      )}
+      
+      {bucketStatus === 'unavailable' && (
+        <div className="mb-6 p-4 bg-yellow-50 text-yellow-700 rounded-lg flex items-start">
+          <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <p>Vërejtje: Storage Bucket nuk është i disponueshëm. Fotot nuk do të mund të ngarkohen por ju mund të vazhdoni të shtoni pronën.</p>
         </div>
       )}
       
@@ -536,7 +551,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   </button>
                 </div>
               ))}
-              {previewUrls.length < 10 && (
+              {previewUrls.length < 10 && bucketStatus !== 'unavailable' && (
                 <label className={`w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed rounded-md cursor-pointer ${
                   darkMode ? 'border-gray-600 hover:border-gray-500' : 'border-gray-300 hover:border-gray-400'
                 }`}>
