@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Property } from '../types';
-import { MapPin, Euro, BedDouble, Bath, Square, Star } from 'lucide-react';
+import { MapPin, Euro, BedDouble, Bath, Square, Star, Image } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { Link } from 'react-router-dom';
 
@@ -10,14 +10,31 @@ interface PropertyCardProps {
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const { darkMode } = useTheme();
+  const [imageError, setImageError] = useState(false);
   
   // Format price with thousands separator
   const formattedPrice = property.price.toLocaleString();
   
-  // Placeholder image if no images are available
-  const imageUrl = property.images && property.images.length > 0 
-    ? property.images[0] 
-    : 'https://via.placeholder.com/400x300?text=No+Image';
+  // Default fallback images based on property type
+  const getDefaultImage = () => {
+    switch(property.type) {
+      case 'apartment':
+        return 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80';
+      case 'house':
+        return 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80';
+      case 'commercial':
+        return 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1296&q=80';
+      case 'land':
+        return 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1932&q=80';
+      default:
+        return 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1773&q=80';
+    }
+  };
+  
+  // Determine image URL with fallbacks
+  const imageUrl = imageError || !property.images || property.images.length === 0 
+    ? getDefaultImage() 
+    : property.images[0];
 
   return (
     <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden ${property.featured ? 'ring-2 ring-blue-500' : ''}`}>
@@ -26,6 +43,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           src={imageUrl} 
           alt={property.title} 
           className="w-full h-48 object-cover"
+          onError={() => setImageError(true)}
         />
         {property.featured && (
           <div className="absolute top-0 right-0 bg-blue-500 text-white px-2 py-1 text-xs font-bold flex items-center">

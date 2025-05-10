@@ -27,6 +27,8 @@ const HomepageProperties: React.FC = () => {
           throw error;
         }
         
+        // Log the properties data for debugging
+        console.log('Fetched properties:', data);
         setProperties(data || []);
       } catch (err) {
         console.error('Error fetching properties:', err);
