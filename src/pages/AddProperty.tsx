@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import TagInput from '../components/TagInput';
 import { useTheme } from '../context/ThemeContext';
 
 interface PropertyForm {
@@ -9,7 +8,6 @@ interface PropertyForm {
   price: string;
   location: string;
   type: 'sale' | 'rent';
-  tags: string[];
 }
 
 const AddProperty: React.FC = () => {
@@ -20,8 +18,7 @@ const AddProperty: React.FC = () => {
     description: '',
     price: '',
     location: '',
-    type: 'sale',
-    tags: []
+    type: 'sale'
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,13 +50,6 @@ const AddProperty: React.FC = () => {
     }));
   };
 
-  const handleTagsChange = (tags: string[]) => {
-    setFormData(prev => ({
-      ...prev,
-      tags
-    }));
-  };
-
   return (
     <div className={`max-w-4xl mx-auto py-16 px-4 sm:px-6 lg:px-8 ${darkMode ? 'text-white' : ''}`}>
       <div className="mb-6">
@@ -69,20 +59,37 @@ const AddProperty: React.FC = () => {
         </p>
       </div>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Titel
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Titel
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Preis
+            </label>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              value={formData.price}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
         </div>
 
         <div>
@@ -100,64 +107,55 @@ const AddProperty: React.FC = () => {
           />
         </div>
 
-        <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Preis
-          </label>
-          <input
-            type="number"
-            id="price"
-            name="price"
-            value={formData.price}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          />
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div>
+            <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Standort
+            </label>
+            <input
+              type="text"
+              id="location"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Typ
+            </label>
+            <select
+              id="type"
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            >
+              <option value="sale">Verkauf</option>
+              <option value="rent">Miete</option>
+            </select>
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Standort
-          </label>
-          <input
-            type="text"
-            id="location"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Typ
-          </label>
-          <select
-            id="type"
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        <div className="flex justify-end space-x-4">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
           >
-            <option value="sale">Verkauf</option>
-            <option value="rent">Miete</option>
-          </select>
+            Abbrechen
+          </button>
+          <button
+            type="submit"
+            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
+          >
+            Immobilie hinzufügen
+          </button>
         </div>
-
-        <TagInput
-          tags={formData.tags}
-          onTagsChange={handleTagsChange}
-        />
-
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-        >
-          Immobilie hinzufügen
-        </button>
       </form>
     </div>
   );
