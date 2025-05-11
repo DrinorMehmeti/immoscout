@@ -284,18 +284,6 @@ const PropertyDetail: React.FC = () => {
                 {property.description}
               </p>
             </div>
-
-            {/* Location Map */}
-            <div className={`mt-8 ${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-md`}>
-              <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Vendndodhja</h2>
-              {property && <PropertyMap location={property.location} darkMode={darkMode} />}
-              <div className="mt-4 flex items-center">
-                <MapPin className={`h-5 w-5 ${darkMode ? 'text-blue-400' : 'text-blue-600'} mr-2`} />
-                <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  {property.location}
-                </span>
-              </div>
-            </div>
             
             {/* Property features */}
             {property.features && property.features.length > 0 && (
