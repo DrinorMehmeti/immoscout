@@ -58,9 +58,9 @@ const PropertyDetail: React.FC = () => {
           .select('*')
           .eq('property_id', id)
           .eq('user_id', authState.user.id)
-          .single();
+          .maybeSingle();
           
-        if (error && error.code !== 'PGRST116') { // Not found error code
+        if (error) {
           console.error('Error checking favorite:', error);
         }
         
