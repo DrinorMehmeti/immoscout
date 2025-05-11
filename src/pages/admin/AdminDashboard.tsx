@@ -156,6 +156,7 @@ const AdminDashboard: React.FC = () => {
         }
 
         // Fetch recent properties
+        // Modified query to get properties with owner information
         const { data: recentProps } = await supabase
           .from('properties')
           .select(`
@@ -167,13 +168,33 @@ const AdminDashboard: React.FC = () => {
             status,
             type,
             listing_type,
-            profiles(name)
+            owner_id
           `)
           .order('created_at', { ascending: false })
           .limit(5);
 
         if (recentProps) {
-          setRecentProperties(recentProps);
+          // Fetch owner names separately
+          const ownerIds = recentProps.map(prop => prop.owner_id);
+          const { data: ownerProfiles } = await supabase
+            .from('profiles')
+            .select('id, name')
+            .in('id', ownerIds);
+
+          // Create a lookup map for owner names
+          const ownerMap = ownerProfiles ? 
+            ownerProfiles.reduce((acc, profile) => {
+              acc[profile.id] = profile.name;
+              return acc;
+            }, {} as Record<string, string>) : {};
+
+          // Add owner name to each property
+          const propertiesWithOwners = recentProps.map(prop => ({
+            ...prop,
+            profiles: { name: ownerMap[prop.owner_id] || 'N/A' }
+          }));
+
+          setRecentProperties(propertiesWithOwners);
         }
 
         // Fetch recent users
