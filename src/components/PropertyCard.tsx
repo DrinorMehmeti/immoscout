@@ -90,22 +90,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           setFavoriteCount(favCount || 0);
         }
         
-        // Try to fetch view count if a property_views table exists
-        try {
-          const { count: viewsCount, error: viewsError } = await supabase
-            .from('property_views')
-            .select('*', { count: 'exact', head: true })
-            .eq('property_id', property.id);
-            
-          if (viewsError) {
-            console.error('Error fetching view count:', viewsError);
-          } else {
-            setViewCount(viewsCount || 0);
-          }
-        } catch (viewErr) {
-          console.log('Property views table might not exist:', viewErr);
-          // If the table doesn't exist, we'll keep the default value
-        }
+        // REMOVED: Property views fetch - Table doesn't exist yet
+        // Setting viewCount to 0 as default since property_views table doesn't exist
+        setViewCount(0);
+        
       } catch (err) {
         console.error('Error fetching statistics:', err);
       }
