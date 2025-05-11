@@ -81,28 +81,10 @@ const AdminUsers: React.FC = () => {
         throw error;
       }
       
-      // Also fetch user emails from auth.users
-      const userIds = data?.map(user => user.id) || [];
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers({
-        perPage: userIds.length,
-        page: 1
-      });
-      
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
-      }
-      
-      // Merge profile data with emails
-      const usersWithEmail = data?.map(user => {
-        const authUser = authUsers?.users.find(au => au.id === user.id);
-        return {
-          ...user,
-          email: authUser?.email
-        };
-      });
-      
-      if (usersWithEmail) {
-        setUsers(usersWithEmail);
+      // We can't use auth.admin.listUsers, so we'll just use the profile data
+      // Email information would need to be fetched another way or stored in profiles
+      if (data) {
+        setUsers(data);
       }
       
       if (count !== null) {
@@ -289,7 +271,7 @@ const AdminUsers: React.FC = () => {
                     Përdoruesi
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Email
+                    ID
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Lloji
@@ -317,15 +299,12 @@ const AdminUsers: React.FC = () => {
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
                             {user.name}
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            ID: {user.id.slice(0, 8)}...
-                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {user.email || 'N/A'}
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {user.id.slice(0, 8)}...
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -388,24 +367,6 @@ const AdminUsers: React.FC = () => {
                                   Bëje premium
                                 </>
                               )}
-                            </button>
-                            
-                            <button
-                              className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center"
-                              onClick={() => {
-                                // Open mail dialog or copy email
-                                const email = user.email;
-                                if (email) {
-                                  navigator.clipboard.writeText(email);
-                                  alert('Email-i u kopjua në clipboard!');
-                                } else {
-                                  alert('Ky përdorues nuk ka email!');
-                                }
-                                setShowUserMenu(null);
-                              }}
-                            >
-                              <Mail className="h-4 w-4 mr-2" />
-                              Dërgo email
                             </button>
                             
                             <button

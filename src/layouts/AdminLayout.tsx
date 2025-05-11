@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -31,13 +31,30 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   
   const isActive = (path: string) => location.pathname === path;
   
-  // Check if the user is an admin (for a real app, this would involve checking roles)
-  const isAdmin = true; // This should be a real check in production
+  // Check if the user is an admin based on user type
+  // This is a placeholder - you may need to implement a proper admin check
+  // based on your application's requirements
+  const isAdmin = authState.user?.profile?.user_type === 'seller' || 
+                  authState.user?.profile?.user_type === 'landlord';
   
-  // If not admin, redirect to home page
+  useEffect(() => {
+    // If not admin, redirect to home page
+    if (!isAdmin && authState.initialized) {
+      navigate('/');
+    }
+  }, [isAdmin, authState.initialized, navigate]);
+
+  // If auth is not initialized or user is not admin, show loading or redirect
+  if (!authState.initialized) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   if (!isAdmin) {
-    navigate('/');
-    return null;
+    return null; // Will redirect in useEffect
   }
 
   return (
