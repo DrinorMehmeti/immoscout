@@ -39,13 +39,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   
   useEffect(() => {
     // If not admin, redirect to home page
-    if (!isAdmin && authState.initialized) {
+    if (!isAdmin && !authState.isLoading) {
       navigate('/');
     }
-  }, [isAdmin, authState.initialized, navigate]);
+  }, [isAdmin, authState.isLoading, navigate]);
 
-  // If auth is not initialized or user is not admin, show loading or redirect
-  if (!authState.initialized) {
+  // If auth is still loading or user is not admin, show loading or redirect
+  if (authState.isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
