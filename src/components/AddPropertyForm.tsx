@@ -242,34 +242,42 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
       // Upload images to Supabase Storage
       const uploadedImageUrls: string[] = [];
       
+      // Only attempt to upload if we have images AND the bucket is available
       if (formData.images.length > 0 && bucketStatus === 'available') {
         const bucketName = 'property_images';  // Using underscore, not hyphen
         
-        try {
-          for (const image of formData.images) {
+        for (const image of formData.images) {
+          try {
             const fileExt = image.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
             const filePath = `properties/${authState.user.id}/${fileName}`;
             
-            const { error: uploadError } = await supabase.storage
+            const { error: uploadError, data: uploadData } = await supabase.storage
               .from(bucketName)
               .upload(filePath, image);
               
             if (uploadError) {
-              console.error('Error in upload process:', uploadError);
-              // Continue without images
+              console.error('Error uploading image:', uploadError);
+              // Skip this image and continue with the next one
+              continue;
             }
             
-            const { data: { publicUrl } } = supabase.storage
-              .from(bucketName)
-              .getPublicUrl(filePath);
-              
-            uploadedImageUrls.push(publicUrl);
+            // Only get the public URL if upload was successful
+            if (uploadData) {
+              const { data: { publicUrl } } = supabase.storage
+                .from(bucketName)
+                .getPublicUrl(filePath);
+                
+              uploadedImageUrls.push(publicUrl);
+            }
+          } catch (uploadErr) {
+            console.error('Exception during image upload:', uploadErr);
+            // Skip this image and continue with the next one
+            continue;
           }
-        } catch (uploadErr) {
-          console.error('Error in upload process:', uploadErr);
-          // Continue without images
         }
+      } else if (formData.images.length > 0) {
+        console.log('Skipping image uploads because bucket is unavailable');
       }
       
       // Map the form status to the correct database value
@@ -945,9 +953,12 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
           </p>
           
           {bucketStatus === 'unavailable' && (
-            <div className="mb-6 p-4 bg-yellow-50 text-yellow-700 rounded-lg flex items-start">
+            <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-100 rounded-lg flex items-start">
               <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-              <p>Vërejtje: Storage Bucket nuk është i disponueshëm. Fotot nuk do të mund të ngarkohen por ju mund të vazhdoni të shtoni pronën.</p>
+              <div>
+                <p className="font-medium">Vërejtje: Ngarkimi i fotove nuk është i disponueshëm aktualisht</p>
+                <p className="mt-1">Ju mund të vazhdoni të shtoni pronën pa foto. Administratori duhet të krijojë bucket 'property_images' në Supabase.</p>
+              </div>
             </div>
           )}
           
@@ -1007,9 +1018,19 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
                 </ul>
               </div>
             ) : (
-              <p className={`text-sm ${darkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>
-                Ngarkimi i fotove nuk është i disponueshëm për momentin. Mund të vazhdoni të shtoni pronën pa foto.
-              </p>
+              <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                <h4 className={`text-sm font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-700'}`}>
+                  Si të krijoni një Supabase Storage Bucket:
+                </h4>
+                <ol className={`list-decimal pl-5 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <li>Hyni në Dashboard-in e Supabase</li>
+                  <li>Shkoni tek sektori "Storage"</li>
+                  <li>Klikoni "New Bucket"</li>
+                  <li>Emërtoni bucket-in si "property_images" (përdorni pikërisht këtë emër me underscore)</li>
+                  <li>Zgjidhni "Public" për të lejuar qasjen publike në foto</li>
+                  <li>Klikoni "Create bucket" për të përfunduar</li>
+                </ol>
+              </div>
             )}
           </div>
         </div>
@@ -1202,6 +1223,12 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
                   </div>
                 ))}
               </div>
+              
+              {bucketStatus === 'unavailable' && (
+                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-100 rounded-md text-sm">
+                  <p>Fotot do të shfaqen në sistemin e paraprë por nuk do të ruhen në server për shkak të mungesës së bucket-it të ruajtjes.</p>
+                </div>
+              )}
             </div>
           )}
           
@@ -1332,7 +1359,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
   return (
     <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6 animate-fadeIn`}>
       {error && (
-        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg flex items-start">
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-100 rounded-lg flex items-start">
           <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
           <p>{error}</p>
         </div>
