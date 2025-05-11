@@ -34,15 +34,27 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const fetchProfile = async (userId: string): Promise<ProfileType | null> => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle(); // Use maybeSingle instead of single to avoid 406 errors
+      // Direct query approach to avoid RLS recursion
+      const { data, error } = await supabase.rpc('get_profile_by_id', {
+        user_id: userId
+      });
       
       if (error) {
-        console.error('Error fetching profile:', error);
-        return null;
+        console.error('Error in RPC call:', error);
+        
+        // Fallback to direct query if RPC fails
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        if (profileError) {
+          console.error('Fallback error fetching profile:', profileError);
+          return null;
+        }
+        
+        return profileData;
       }
       
       return data;
@@ -159,7 +171,8 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
           id: user.id,
           name,
           user_type: userType,
-          is_premium: false
+          is_premium: false,
+          is_admin: userType === 'seller' || userType === 'landlord'
         });
         
       if (profileError) {

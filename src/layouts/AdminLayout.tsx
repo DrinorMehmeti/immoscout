@@ -31,11 +31,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   
   const isActive = (path: string) => location.pathname === path;
   
-  // Check if the user is an admin based on user type
-  // This is a placeholder - you may need to implement a proper admin check
-  // based on your application's requirements
-  const isAdmin = authState.user?.profile?.user_type === 'seller' || 
-                  authState.user?.profile?.user_type === 'landlord';
+  // Check if the user is an admin based on the is_admin flag
+  const isAdmin = authState.user?.profile?.is_admin === true;
   
   useEffect(() => {
     // If not admin, redirect to home page
