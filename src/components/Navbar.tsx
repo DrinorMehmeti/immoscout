@@ -87,12 +87,14 @@ const Navbar: React.FC = () => {
               )}
             </button>
             
+            {/* Notification bell for authenticated users */}
+            {authState.isAuthenticated && (
+              <NotificationBell />
+            )}
+            
             {/* Authentication/User actions */}
             {authState.isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                {/* Notification Bell */}
-                <NotificationBell />
-                
                 <Link 
                   to="/dashboard" 
                   className={`flex items-center text-sm font-medium ${darkMode ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'} transition-colors px-3 py-2 rounded-md`}
@@ -155,19 +157,12 @@ const Navbar: React.FC = () => {
           {/* Mobile menu button */}
           <div className="flex items-center md:hidden">
             {authState.isAuthenticated && (
-              <>
-                {/* Mobile notification bell */}
-                <div className="mr-2">
-                  <NotificationBell />
-                </div>
-                
-                <Link 
-                  to="/add-property" 
-                  className="mr-2 flex items-center bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Plus className="h-5 w-5" />
-                </Link>
-              </>
+              <Link 
+                to="/add-property" 
+                className="mr-2 flex items-center bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                <Plus className="h-5 w-5" />
+              </Link>
             )}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
