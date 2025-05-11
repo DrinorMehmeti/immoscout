@@ -20,6 +20,7 @@ const NotificationBell: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [tableExists, setTableExists] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications when user is authenticated
@@ -28,26 +29,29 @@ const NotificationBell: React.FC = () => {
       fetchNotifications();
       
       // Set up real-time subscription for new notifications
-      const subscription = supabase
-        .channel('public:notifications')
-        .on('postgres_changes', { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'notifications',
-          filter: `user_id=eq.${authState.user.id}`
-        }, (payload) => {
-          // Add the new notification to the list
-          const newNotification = payload.new as Notification;
-          setNotifications(prev => [newNotification, ...prev]);
-          setUnreadCount(prev => prev + 1);
-        })
-        .subscribe();
-        
-      return () => {
-        subscription.unsubscribe();
-      };
+      // Only set up if the table exists
+      if (tableExists) {
+        const subscription = supabase
+          .channel('public:notifications')
+          .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'notifications',
+            filter: `user_id=eq.${authState.user.id}`
+          }, (payload) => {
+            // Add the new notification to the list
+            const newNotification = payload.new as Notification;
+            setNotifications(prev => [newNotification, ...prev]);
+            setUnreadCount(prev => prev + 1);
+          })
+          .subscribe();
+          
+        return () => {
+          subscription.unsubscribe();
+        };
+      }
     }
-  }, [authState.isAuthenticated, authState.user]);
+  }, [authState.isAuthenticated, authState.user, tableExists]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -75,14 +79,17 @@ const NotificationBell: React.FC = () => {
         .select('id')
         .limit(1);
       
-      // If the table doesn't exist yet, just return empty array
+      // If the table doesn't exist yet, handle gracefully
       if (tableCheckError && tableCheckError.message.includes('relation "public.notifications" does not exist')) {
         console.log('Notifications table does not exist yet');
+        setTableExists(false);
         setNotifications([]);
         setUnreadCount(0);
         setLoading(false);
         return;
       }
+      
+      setTableExists(true);
       
       // Fetch notifications
       const { data, error } = await supabase
@@ -112,18 +119,9 @@ const NotificationBell: React.FC = () => {
   };
 
   const markAsRead = async (notificationId: string) => {
+    if (!tableExists) return;
+    
     try {
-      // Check if the notifications table exists first
-      const { error: tableCheckError } = await supabase
-        .from('notifications')
-        .select('id')
-        .limit(1);
-      
-      // If the table doesn't exist yet, just return
-      if (tableCheckError && tableCheckError.message.includes('relation "public.notifications" does not exist')) {
-        return;
-      }
-      
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
@@ -151,20 +149,9 @@ const NotificationBell: React.FC = () => {
   };
 
   const markAllAsRead = async () => {
-    if (notifications.length === 0) return;
+    if (!tableExists || notifications.length === 0) return;
     
     try {
-      // Check if the notifications table exists first
-      const { error: tableCheckError } = await supabase
-        .from('notifications')
-        .select('id')
-        .limit(1);
-      
-      // If the table doesn't exist yet, just return
-      if (tableCheckError && tableCheckError.message.includes('relation "public.notifications" does not exist')) {
-        return;
-      }
-      
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
@@ -214,6 +201,22 @@ const NotificationBell: React.FC = () => {
 
   if (!authState.isAuthenticated) {
     return null;
+  }
+
+  // If the table doesn't exist, just show the button without the notification count
+  if (!tableExists) {
+    return (
+      <button
+        className={`relative p-1 rounded-full ${
+          darkMode 
+            ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
+            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+        } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+        aria-label="Notifications"
+      >
+        <Bell className="h-6 w-6" />
+      </button>
+    );
   }
 
   return (

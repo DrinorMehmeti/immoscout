@@ -81,6 +81,21 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       const userId = authState.user?.id;
       if (!userId) throw new Error('User ID not found');
       
+      // Check if the bucket exists first
+      const { data: buckets, error: bucketError } = await supabase
+        .storage
+        .listBuckets();
+      
+      if (bucketError) {
+        console.error('Error checking buckets:', bucketError);
+        throw new Error('Error checking storage buckets');
+      }
+      
+      const bucketExists = buckets.some(bucket => bucket.name === 'property_images');
+      if (!bucketExists) {
+        throw new Error('Bucket not found');
+      }
+      
       // Upload each image
       for (let i = 0; i < images.length; i++) {
         const file = images[i];
