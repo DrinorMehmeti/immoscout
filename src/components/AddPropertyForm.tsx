@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Euro, Upload, X, Info, BedDouble, Bath, Square, Calendar, Building2, Car, ArrowRight, ChevronLeft, ChevronRight, Home, Check } from 'lucide-react';
+import { MapPin, Euro, Upload, X, Info, BedDouble, Bath, Square, Calendar, Building2, Car, ArrowRight, ChevronLeft, ChevronRight, Home, Check, Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
