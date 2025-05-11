@@ -36,20 +36,41 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   useEffect(() => {
     const checkBucket = async () => {
       try {
-        const { data: buckets, error } = await supabase.storage.listBuckets();
+        // First check if we can list buckets
+        const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
         
-        if (error) {
-          console.error('Error checking buckets:', error);
+        if (bucketError) {
+          console.error('Error checking buckets:', bucketError);
           setBucketStatus('unavailable');
           return;
         }
         
-        const bucketExists = buckets.some(bucket => bucket.name === 'property-images');
-        setBucketStatus(bucketExists ? 'available' : 'unavailable');
+        // Check if our specific bucket exists
+        const propertyBucket = buckets.find(bucket => bucket.name === 'property-images');
         
-        console.log('Bucket status:', bucketExists ? 'available' : 'unavailable');
+        if (!propertyBucket) {
+          console.error('Property images bucket not found');
+          setBucketStatus('unavailable');
+          return;
+        }
+        
+        // Try to list some files in the bucket to confirm access
+        const { data: files, error: listError } = await supabase.storage
+          .from('property-images')
+          .list();
+          
+        if (listError) {
+          console.error('Error listing files in bucket:', listError);
+          setBucketStatus('unavailable');
+          return;
+        }
+        
+        // If we got here, bucket is available
+        setBucketStatus('available');
+        console.log('Bucket is available for use');
+        
       } catch (err) {
-        console.error('Exception checking buckets:', err);
+        console.error('Exception checking bucket availability:', err);
         setBucketStatus('unavailable');
       }
     };
