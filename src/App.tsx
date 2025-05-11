@@ -14,7 +14,8 @@ import Dashboard from './pages/Dashboard';
 import ListingsPage from './pages/ListingsPage';
 import MyPropertiesPage from './pages/MyPropertiesPage';
 import PremiumPage from './pages/PremiumPage';
-import AddProperty from './pages/AddProperty';
+import AddPropertyPage from './pages/AddPropertyPage';
+import PropertyDetail from './pages/PropertyDetail';
 
 // The main app content for non-authenticated users
 const LandingPage = () => {
@@ -228,8 +229,9 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/listings" element={<ListingsPage />} />
+          <Route path="/property/:id" element={<PropertyDetail />} />
           <Route path="/my-properties" element={<ProtectedRoute><MyPropertiesPage /></ProtectedRoute>} />
-          <Route path="/add-property" element={<ProtectedRoute><AddProperty /></ProtectedRoute>} />
+          <Route path="/add-property" element={<ProtectedRoute><AddPropertyPage /></ProtectedRoute>} />
           <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

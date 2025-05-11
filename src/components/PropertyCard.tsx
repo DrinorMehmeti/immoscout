@@ -1,18 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { Property } from '../types';
-import { MapPin, Euro, BedDouble, Bath, Square, Star, Image } from 'lucide-react';
+import { Property as PropertyType } from '../types';
+import { MapPin, Euro, BedDouble, Bath, Square, Star, Image, Edit, Trash2, CheckCircle, XCircle, Clock, AlertCircle, Eye, Heart } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+
+interface Property extends PropertyType {
+  views?: number;
+  favorites?: number;
+}
 
 interface PropertyCardProps {
   property: Property;
 }
 
+const statusColors: Record<string, string> = {
+  active: 'bg-blue-100 text-blue-800',
+  pending: 'bg-yellow-100 text-yellow-800',
+  rejected: 'bg-red-100 text-red-800',
+  expired: 'bg-gray-200 text-gray-700',
+};
+const statusLabels: Record<string, string> = {
+  active: 'Aktiv',
+  pending: 'Në rishikim',
+  rejected: 'Refuzuar',
+  expired: 'Skaduar',
+};
+
 const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const { darkMode } = useTheme();
   const [imageError, setImageError] = useState(false);
   const [propertyImages, setPropertyImages] = useState<string[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const status = property.status || 'active';
   
   // Load property images from database
   useEffect(() => {
@@ -44,6 +64,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     loadImagesFromDatabase();
   }, [property.id]);
   
+  // Clean up preview URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      propertyImages.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [propertyImages]);
+
   // Format price with thousands separator
   const formattedPrice = property.price.toLocaleString();
   
@@ -76,8 +103,29 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     ? { text: 'Me qira', bg: 'bg-blue-600' } 
     : { text: 'Në shitje', bg: 'bg-green-600' };
 
+  // Dummy-Statistiken (ersetzen durch echte Felder, falls vorhanden)
+  const views = property.views ?? 239;
+  const favorites = property.favorites ?? 5;
+  const createdAt = property.created_at ? new Date(property.created_at) : new Date();
+  const formattedDate = createdAt.toLocaleDateString('de-DE');
+
+  const handleDelete = async () => {
+    // Hier kann die Löschlogik mit Supabase eingebaut werden
+    setShowDeleteConfirm(false);
+    // Optional: Seite neu laden oder Property aus Liste entfernen
+  };
+
   return (
-    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden ${property.featured ? 'ring-2 ring-blue-500' : ''}`}>
+    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden relative ${property.featured ? 'ring-4 ring-yellow-400' : ''}`}>
+      {/* Status-Badge oben rechts */}
+      <div className={`absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-semibold z-10 ${statusColors[status] || 'bg-gray-100 text-gray-700'}`}>
+        {statusLabels[status] || status}
+      </div>
+      {property.featured && (
+        <div className="absolute top-2 left-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold flex items-center shadow">
+          <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-900" /> Top Shpallje
+        </div>
+      )}
       <div className="relative">
         <img 
           src={imageUrl} 
@@ -86,9 +134,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           onError={() => setImageError(true)}
         />
         {property.featured && (
-          <div className="absolute top-0 right-0 bg-blue-500 text-white px-2 py-1 text-xs font-bold flex items-center">
-            <Star className="h-3 w-3 mr-1" />
-            Premium
+          <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 px-2 py-1 text-xs font-bold flex items-center">
+            <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-900" /> Premium
           </div>
         )}
         <div className={`absolute bottom-0 left-0 ${listingTypeLabel.bg} text-white px-2 py-1 text-xs font-bold`}>
@@ -104,6 +151,34 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
             {property.listing_type === 'rent' ? '/muaj' : ''}
           </p>
         </div>
+        
+        {/* Redesigned Statistics Bar */}
+        <div className="mt-3 mb-3 grid grid-cols-3 gap-2 border-y border-gray-100 dark:border-gray-700 py-2">
+          <div className="flex flex-col items-center py-1 px-2 rounded-md bg-blue-50 dark:bg-blue-900/30">
+            <div className="flex items-center text-blue-700 dark:text-blue-300 mb-1">
+              <Eye className="h-4 w-4 mr-1" />
+              <span className="font-semibold">{views}</span>
+            </div>
+            <span className="text-[10px] text-blue-600/70 dark:text-blue-400/70">shikime</span>
+          </div>
+          
+          <div className="flex flex-col items-center py-1 px-2 rounded-md bg-pink-50 dark:bg-pink-900/30">
+            <div className="flex items-center text-pink-700 dark:text-pink-300 mb-1">
+              <Heart className="h-4 w-4 mr-1" />
+              <span className="font-semibold">{favorites}</span>
+            </div>
+            <span className="text-[10px] text-pink-600/70 dark:text-pink-400/70">në favorite</span>
+          </div>
+          
+          <div className="flex flex-col items-center py-1 px-2 rounded-md bg-gray-50 dark:bg-gray-800/60">
+            <div className="flex items-center text-gray-700 dark:text-gray-300 mb-1">
+              <Clock className="h-4 w-4 mr-1" />
+              <span className="font-semibold">{formattedDate}</span>
+            </div>
+            <span className="text-[10px] text-gray-600/70 dark:text-gray-400/70">e postuar më</span>
+          </div>
+        </div>
+        
         <div className="flex items-center mt-1 text-gray-500 text-sm">
           <MapPin className="h-4 w-4 mr-1" />
           <span>{property.location}</span>
@@ -131,14 +206,35 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           )}
         </div>
         
-        <div className="mt-4">
+        <div className="mt-4 flex flex-col gap-2">
           <Link 
             to={`/property/${property.id}`} 
             className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium block text-center"
           >
             Shiko detajet
           </Link>
+          <div className="flex justify-center gap-2 mt-1">
+            <Link to={`/edit-property/${property.id}`} className="flex items-center px-3 py-1 bg-gray-100 hover:bg-blue-100 text-blue-700 rounded text-xs font-medium">
+              <Edit className="h-4 w-4 mr-1" /> Ndrysho
+            </Link>
+            <button onClick={() => setShowDeleteConfirm(true)} className="flex items-center px-3 py-1 bg-gray-100 hover:bg-red-100 text-red-700 rounded text-xs font-medium">
+              <Trash2 className="h-4 w-4 mr-1" /> Fshije
+            </button>
+          </div>
         </div>
+        {/* Delete-Bestätigung */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+            <div className={`p-6 rounded-xl shadow-xl ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}> 
+              <h3 className="text-lg font-bold mb-2 flex items-center"><AlertCircle className="h-5 w-5 mr-2 text-red-500" /> Fshije pronën?</h3>
+              <p className="mb-4">Jeni i sigurt që doni të fshini këtë pronë? Ky veprim nuk mund të zhbëhet.</p>
+              <div className="flex gap-4 justify-end">
+                <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800">Anulo</button>
+                <button onClick={handleDelete} className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white">Fshije</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

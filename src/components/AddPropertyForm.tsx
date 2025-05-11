@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Building, Euro, Upload, X, Info, BedDouble, Bath, Square } from 'lucide-react';
+import { MapPin, Euro, Upload, X, Info, BedDouble, Bath, Square, Calendar, Building2, Car, ArrowRight, ChevronLeft, ChevronRight, Home, Check, Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
@@ -8,13 +8,26 @@ interface AddPropertyFormProps {
   onSuccess?: () => void;
 }
 
+// Define steps for the form
+const STEPS = {
+  BASIC_INFO: 0,
+  DETAILS: 1,
+  FEATURES: 2,
+  IMAGES: 3,
+  REVIEW: 4
+};
+
 const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const { authState } = useAuth();
   const { darkMode } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+<<<<<<< HEAD
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+=======
+  const [currentStep, setCurrentStep] = useState(STEPS.BASIC_INFO);
+>>>>>>> d9f104a80ecc7e09480ac103ff401f8140ba0ad8
   
   // Form fields
   const [title, setTitle] = useState('');
@@ -28,9 +41,55 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const [area, setArea] = useState('');
   const [features, setFeatures] = useState<string[]>([]);
   const [images, setImages] = useState<File[]>([]);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [featureInput, setFeatureInput] = useState('');
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [bucketStatus, setBucketStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
+  
+  // Additional details fields
+  const [buildingYear, setBuildingYear] = useState('');
+  const [floor, setFloor] = useState('');
+  const [totalFloors, setTotalFloors] = useState('');
+  const [hasParking, setHasParking] = useState(false);
+  const [parkingSpaces, setParkingSpaces] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [condition, setCondition] = useState<'new' | 'good' | 'needs-renovation'>('good');
+
+  // Step validation state
+  const [stepValidation, setStepValidation] = useState({
+    0: false, // BASIC_INFO
+    1: true,  // DETAILS (optional fields)
+    2: true,  // FEATURES (optional)
+    3: true,  // IMAGES (optional)
+    4: true   // REVIEW (always valid if previous steps are valid)
+  });
+
+  // Check if the bucket exists without trying to create it
+  useEffect(() => {
+    const checkBucketAvailability = async () => {
+      try {
+        // Check if we can access the property-images bucket
+        const { data: files, error: listError } = await supabase.storage
+          .from('property-images')
+          .list();
+          
+        if (listError) {
+          console.error('Error accessing bucket:', listError);
+          setBucketStatus('unavailable');
+          return;
+        }
+        
+        // If we got here, bucket is available
+        setBucketStatus('available');
+        console.log('Bucket is available for use');
+        
+      } catch (err) {
+        console.error('Exception checking bucket availability:', err);
+        setBucketStatus('unavailable');
+      }
+    };
+    
+    checkBucketAvailability();
+  }, []);
 
   // Clean up preview URLs when component unmounts
   useEffect(() => {
@@ -38,6 +97,22 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       previewUrls.forEach(url => URL.revokeObjectURL(url));
     };
   }, [previewUrls]);
+
+  // Validate basic info step
+  useEffect(() => {
+    // Basic validation for required fields
+    const isStepValid = 
+      title.trim() !== '' && 
+      description.trim() !== '' && 
+      price.trim() !== '' && 
+      parseFloat(price) > 0 && 
+      location.trim() !== '';
+    
+    setStepValidation(prev => ({
+      ...prev,
+      [STEPS.BASIC_INFO]: isStepValid
+    }));
+  }, [title, description, price, location]);
 
   const handleAddFeature = () => {
     if (featureInput.trim() !== '' && !features.includes(featureInput.trim())) {
@@ -81,25 +156,23 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     setImages(newImages);
   };
 
-  // Function to check if the bucket exists
-  const checkBucketExists = async (bucketName: string) => {
-    try {
-      // Check if bucket exists
-      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-      
-      if (listError) {
-        console.error('Error checking buckets:', listError);
-        return false;
-      }
-      
-      const bucketExists = buckets.some(bucket => bucket.name === bucketName);
-      return bucketExists;
-    } catch (err) {
-      console.error('Error checking if bucket exists:', err);
-      return false;
+  // Go to next step if current step is valid
+  const nextStep = () => {
+    if (currentStep < STEPS.REVIEW && stepValidation[currentStep]) {
+      setCurrentStep(currentStep + 1);
+      window.scrollTo(0, 0);
     }
   };
 
+  // Go to previous step
+  const prevStep = () => {
+    if (currentStep > STEPS.BASIC_INFO) {
+      setCurrentStep(currentStep - 1);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  // Handle final form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -111,19 +184,31 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         throw new Error('Ju duhet të jeni të kyçur për të shtuar pronë');
       }
       
+      // Validate price
+      if (!price || price.trim() === '') {
+        throw new Error('Çmimi është i detyruar. Ju lutemi vendosni një vlerë.');
+      }
+
+      const priceValue = parseFloat(price);
+      if (isNaN(priceValue) || priceValue <= 0) {
+        throw new Error('Ju lutemi vendosni një çmim të vlefshëm më të madh se 0.');
+      }
+      
       // Upload images to Supabase Storage
       const uploadedImageUrls: string[] = [];
       const uploadErrorList: string[] = [];
       
-      if (images.length > 0) {
-        // Check if the bucket exists before uploading
+      if (images.length > 0 && bucketStatus === 'available') {
         const bucketName = 'property-images';
-        const bucketExists = await checkBucketExists(bucketName);
         
+<<<<<<< HEAD
         if (!bucketExists) {
           uploadErrorList.push('Storage bucket nuk ekziston. Fotot nuk do të ngarkohen.');
         } else {
           // Upload images only if the bucket exists
+=======
+        try {
+>>>>>>> d9f104a80ecc7e09480ac103ff401f8140ba0ad8
           for (const image of images) {
             const fileExt = image.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
@@ -134,8 +219,13 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               .upload(filePath, image);
               
             if (uploadError) {
+<<<<<<< HEAD
               uploadErrorList.push(`Gabim gjatë ngarkimit të fotos: ${image.name} (${uploadError.message})`);
               continue;
+=======
+              console.error('Error uploading image:', uploadError);
+              continue; // Skip this image but continue with others
+>>>>>>> d9f104a80ecc7e09480ac103ff401f8140ba0ad8
             }
             
             const { data: { publicUrl } } = supabase.storage
@@ -144,6 +234,9 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               
             uploadedImageUrls.push(publicUrl);
           }
+        } catch (uploadErr) {
+          console.error('Error in upload process:', uploadErr);
+          // Continue without images
         }
       }
       
@@ -154,7 +247,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           owner_id: authState.user.id,
           title,
           description,
-          price: parseFloat(price),
+          price: priceValue,
           location,
           type: propertyType,
           listing_type: listingType,
@@ -162,7 +255,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
           area: area ? parseFloat(area) : null,
           features,
-          images: uploadedImageUrls,
+          images: uploadedImageUrls.length > 0 ? uploadedImageUrls : [],
           status: 'active',
           featured: false
         });
@@ -190,6 +283,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       setFeatures([]);
       setImages([]);
       setPreviewUrls([]);
+      setCurrentStep(STEPS.BASIC_INFO);
       
       // Call success callback if provided
       if (onSuccess) {
@@ -207,6 +301,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     }
   };
 
+<<<<<<< HEAD
   return (
     <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
       <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-6`}>Shtoni një pronë të re</h2>
@@ -224,17 +319,71 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               </ul>
             )}
           </div>
+=======
+  const renderStepIndicator = () => {
+    return (
+      <div className="mb-6">
+        <div className="flex justify-between items-center">
+          {Object.values(STEPS).filter(step => typeof step === 'number').map((step) => (
+            <div key={step} className="flex flex-col items-center">
+              <div 
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                  currentStep === step 
+                    ? 'bg-blue-600 text-white' 
+                    : currentStep > step 
+                      ? 'bg-green-500 text-white' 
+                      : darkMode 
+                        ? 'bg-gray-700 text-gray-300'
+                        : 'bg-gray-200 text-gray-600'
+                }`}
+              >
+                {currentStep > step ? <Check className="h-5 w-5" /> : step + 1}
+              </div>
+              <span className={`text-xs mt-2 ${
+                currentStep === step 
+                  ? 'text-blue-600 font-medium' 
+                  : darkMode 
+                    ? 'text-gray-400' 
+                    : 'text-gray-500'
+              }`}>
+                {step === STEPS.BASIC_INFO && 'Bazike'}
+                {step === STEPS.DETAILS && 'Detajet'}
+                {step === STEPS.FEATURES && 'Karakteristikat'}
+                {step === STEPS.IMAGES && 'Fotot'}
+                {step === STEPS.REVIEW && 'Përfundo'}
+              </span>
+            </div>
+          ))}
+>>>>>>> d9f104a80ecc7e09480ac103ff401f8140ba0ad8
         </div>
-      )}
-      
-      {success && (
-        <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg flex items-start">
-          <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-          <p>Prona u shtua me sukses!</p>
+        <div className="relative flex items-center justify-between mt-2">
+          <div className="absolute left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 top-1/2 transform -translate-y-1/2 z-0"></div>
+          {Object.values(STEPS).filter(step => typeof step === 'number').map((step) => (
+            <div 
+              key={step}
+              className={`w-full h-1 z-10 transition-colors ${
+                step < currentStep 
+                  ? 'bg-green-500' 
+                  : step === currentStep 
+                    ? 'bg-blue-600' 
+                    : darkMode 
+                      ? 'bg-gray-700' 
+                      : 'bg-gray-200'
+              }`}
+            ></div>
+          ))}
         </div>
-      )}
-      
-      <form onSubmit={handleSubmit}>
+      </div>
+    );
+  };
+
+  const renderBasicInfoStep = () => {
+    return (
+      <>
+        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          Informacionet Bazike
+        </h3>
+        
         <div className="space-y-6">
           <div>
             <label htmlFor="listingType" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
@@ -383,7 +532,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   required
-                  min="0"
+                  min="1"
+                  step="any"
                   className={`pl-10 block w-full rounded-md focus:ring-blue-500 focus:border-blue-500 ${
                     darkMode 
                       ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
@@ -392,6 +542,9 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   placeholder="0"
                 />
               </div>
+              <p className={`mt-1 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Çmimi është i detyrueshëm dhe duhet të jetë më i madh se 0
+              </p>
             </div>
             
             <div>
@@ -418,7 +571,20 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               </div>
             </div>
           </div>
-          
+        </div>
+      </>
+    );
+  };
+
+  const renderDetailsStep = () => {
+    return (
+      <>
+        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          Detajet e Pronës
+        </h3>
+        
+        <div className="space-y-6">
+          {/* Basic measurements */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {(propertyType === 'apartment' || propertyType === 'house') && (
               <div>
@@ -479,6 +645,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                 value={area}
                 onChange={(e) => setArea(e.target.value)}
                 min="0"
+                step="0.01"
                 className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
                   darkMode 
                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
@@ -488,55 +655,294 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
             </div>
           </div>
           
-          <div>
-            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-              Karakteristikat
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {features.map((feature, index) => (
-                <div key={index} className={`${
-                  darkMode ? 'bg-blue-900 text-blue-300' : 'bg-blue-50 text-blue-700'
-                } rounded-full px-3 py-1 text-sm flex items-center`}>
-                  <span>{feature}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFeature(feature)}
-                    className={`ml-1 ${darkMode ? 'text-blue-400 hover:text-blue-200' : 'text-blue-400 hover:text-blue-600'}`}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+          {/* Additional property details */}
+          {(propertyType === 'apartment' || propertyType === 'house') && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label htmlFor="buildingYear" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      <span>Viti i ndërtimit</span>
+                    </div>
+                  </label>
+                  <input
+                    type="number"
+                    id="buildingYear"
+                    value={buildingYear}
+                    onChange={(e) => setBuildingYear(e.target.value)}
+                    min="1900"
+                    max={new Date().getFullYear()}
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
+                      darkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'border-gray-300 text-gray-900'
+                    }`}
+                    placeholder="p.sh. 2010"
+                  />
                 </div>
-              ))}
-            </div>
-            <div className="flex">
-              <input
-                type="text"
-                value={featureInput}
-                onChange={(e) => setFeatureInput(e.target.value)}
-                className={`flex-1 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
-                  darkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'border-gray-300 text-gray-900'
-                }`}
-                placeholder="p.sh. Parking, Ballkon, Ngrohje qendrore..."
-              />
-              <button
-                type="button"
-                onClick={handleAddFeature}
-                className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-r-md"
-              >
-                Shto
-              </button>
-            </div>
-          </div>
+                
+                {propertyType === 'apartment' && (
+                  <div>
+                    <label htmlFor="floor" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <div className="flex items-center">
+                        <Building2 className="h-4 w-4 mr-1" />
+                        <span>Kati</span>
+                      </div>
+                    </label>
+                    <input
+                      type="number"
+                      id="floor"
+                      value={floor}
+                      onChange={(e) => setFloor(e.target.value)}
+                      min="0"
+                      className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
+                        darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'border-gray-300 text-gray-900'
+                      }`}
+                      placeholder="p.sh. 3"
+                    />
+                  </div>
+                )}
+                
+                {propertyType === 'apartment' && (
+                  <div>
+                    <label htmlFor="totalFloors" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <div className="flex items-center">
+                        <Building2 className="h-4 w-4 mr-1" />
+                        <span>Numri i përgjithshëm i kateve</span>
+                      </div>
+                    </label>
+                    <input
+                      type="number"
+                      id="totalFloors"
+                      value={totalFloors}
+                      onChange={(e) => setTotalFloors(e.target.value)}
+                      min="1"
+                      className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
+                        darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'border-gray-300 text-gray-900'
+                      }`}
+                      placeholder="p.sh. 8"
+                    />
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                    <div className="flex items-center">
+                      <Car className="h-4 w-4 mr-1" />
+                      <span>Vendparkimi</span>
+                    </div>
+                  </label>
+                  <div className="flex items-center mt-1">
+                    <input
+                      type="checkbox"
+                      id="hasParking"
+                      checked={hasParking}
+                      onChange={(e) => setHasParking(e.target.checked)}
+                      className={`h-4 w-4 rounded focus:ring-blue-500 ${
+                        darkMode ? 'text-blue-600 border-gray-600' : 'text-blue-600 border-gray-300'
+                      }`}
+                    />
+                    <label htmlFor="hasParking" className={`ml-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Ka parking të dedikuar
+                    </label>
+                  </div>
+                  
+                  {hasParking && (
+                    <div className="mt-2">
+                      <label htmlFor="parkingSpaces" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Numri i vendeve të parkimit
+                      </label>
+                      <input
+                        type="number"
+                        id="parkingSpaces"
+                        value={parkingSpaces}
+                        onChange={(e) => setParkingSpaces(e.target.value)}
+                        min="1"
+                        className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
+                          darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                            : 'border-gray-300 text-gray-900'
+                        }`}
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                <div>
+                  <label htmlFor="condition" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                    Gjendja e pronës
+                  </label>
+                  <select
+                    id="condition"
+                    value={condition}
+                    onChange={(e) => setCondition(e.target.value as 'new' | 'good' | 'needs-renovation')}
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
+                      darkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'border-gray-300 text-gray-900'
+                    }`}
+                  >
+                    <option value="new">E re</option>
+                    <option value="good">E mirë</option>
+                    <option value="needs-renovation">Nevojitet renovim</option>
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
           
           <div>
-            <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-              Fotot e pronës
+            <label htmlFor="neighborhood" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              Lagjja / Vendndodhja specifike
             </label>
-            <div className="flex flex-wrap gap-4 mb-3">
+            <input
+              type="text"
+              id="neighborhood"
+              value={neighborhood}
+              onChange={(e) => setNeighborhood(e.target.value)}
+              className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
+                darkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'border-gray-300 text-gray-900'
+              }`}
+              placeholder="p.sh. Dardania, afër shkollës Ismail Qemali"
+            />
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const renderFeaturesStep = () => {
+    return (
+      <>
+        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          Karakteristikat dhe Pajisjet
+        </h3>
+        
+        <div>
+          <label className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+            Veçoritë e pronës
+          </label>
+          <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            Shtoni karakteristikat e veçanta të pronës tuaj për të tërhequr vëmendjen e klientëve
+          </p>
+          
+          <div className="flex flex-wrap gap-2 mb-4">
+            {features.map((feature, index) => (
+              <div key={index} className={`${
+                darkMode ? 'bg-blue-900 text-blue-300' : 'bg-blue-50 text-blue-700'
+              } rounded-full px-3 py-1 text-sm flex items-center`}>
+                <span>{feature}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFeature(feature)}
+                  className={`ml-1 ${darkMode ? 'text-blue-400 hover:text-blue-200' : 'text-blue-400 hover:text-blue-600'}`}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex">
+            <input
+              type="text"
+              value={featureInput}
+              onChange={(e) => setFeatureInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddFeature();
+                }
+              }}
+              className={`flex-1 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
+                darkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'border-gray-300 text-gray-900'
+              }`}
+              placeholder="p.sh. Parking, Ballkon, Ngrohje qendrore..."
+            />
+            <button
+              type="button"
+              onClick={handleAddFeature}
+              className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-r-md"
+            >
+              Shto
+            </button>
+          </div>
+          
+          <div className="mt-6">
+            <h4 className={`text-lg font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+              Veçoritë e zakonshme
+            </h4>
+            <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              Kliko në veçoritë e mëposhtme për t'i shtuar më shpejt
+            </p>
+            
+            <div className="flex flex-wrap gap-2">
+              {['Ballkon', 'Parking', 'Ngrohje qendrore', 'Ashensor', 'Klimë', 'Internet', 
+                'E mobiluar', 'Kuzhinë e ndarë', 'Pemë frutore', 'Siguri', 'Vendparkimi i mbuluar',
+                'Dritare dyshe', 'Sistem alarmi', 'Afër qendrës', 'Afër shkollës'].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => {
+                    if (!features.includes(suggestion)) {
+                      setFeatures([...features, suggestion]);
+                    }
+                  }}
+                  disabled={features.includes(suggestion)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    features.includes(suggestion)
+                      ? darkMode 
+                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : darkMode 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const renderImagesStep = () => {
+    return (
+      <>
+        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          Fotot e Pronës
+        </h3>
+        
+        <div>
+          <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            Fotot tërheqin më shumë klientë potencialë. Ngarkoni foto të cilësisë së mirë për të rritur shanset e shijes së pronës suaj.
+          </p>
+          
+          {bucketStatus === 'unavailable' && (
+            <div className="mb-6 p-4 bg-yellow-50 text-yellow-700 rounded-lg flex items-start">
+              <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+              <p>Vërejtje: Storage Bucket nuk është i disponueshëm. Fotot nuk do të mund të ngarkohen por ju mund të vazhdoni të shtoni pronën.</p>
+            </div>
+          )}
+          
+          <div className="mt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
               {previewUrls.map((url, index) => (
-                <div key={index} className="relative w-24 h-24">
+                <div key={index} className="relative aspect-square">
                   <img 
                     src={url} 
                     alt={`Property preview ${index + 1}`} 
@@ -551,12 +957,19 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   </button>
                 </div>
               ))}
-              {previewUrls.length < 10 && (
-                <label className={`w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed rounded-md cursor-pointer ${
+              
+              {previewUrls.length < 10 && bucketStatus === 'available' && (
+                <label className={`aspect-square flex flex-col items-center justify-center border-2 border-dashed rounded-md cursor-pointer ${
                   darkMode ? 'border-gray-600 hover:border-gray-500' : 'border-gray-300 hover:border-gray-400'
                 }`}>
                   <Upload className={`h-8 w-8 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} />
-                  <span className={`mt-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ngarko foto</span>
+                  <span className={`mt-2 text-sm text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Kliko për të ngarkuar foto
+                    <br />
+                    <span className="text-xs">
+                      {10 - previewUrls.length} fotot e mbetura
+                    </span>
+                  </span>
                   <input
                     type="file"
                     accept="image/*"
@@ -567,21 +980,364 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                 </label>
               )}
             </div>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Ngarko deri në 10 foto të pronës. Formati: JPG, PNG. Madhësia max: 5MB.
-            </p>
+            
+            {bucketStatus === 'available' ? (
+              <div>
+                <h4 className={`text-sm font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-700'}`}>
+                  Këshilla për foto efektive:
+                </h4>
+                <ul className={`list-disc pl-5 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <li>Përdorni dritë natyrore sa më shumë të jetë e mundur</li>
+                  <li>Kapni dhomën nga kënde të ndryshme</li>
+                  <li>Sigurohuni që hapësira të jetë e pastër dhe e rregulluar</li>
+                  <li>Fotografoni të gjitha hapësirat kryesore të pronës</li>
+                  <li>Madhësia maksimale e skedarit: 5MB për foto</li>
+                </ul>
+              </div>
+            ) : (
+              <p className={`text-sm ${darkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>
+                Ngarkimi i fotove nuk është i disponueshëm për momentin. Mund të vazhdoni të shtoni pronën pa foto.
+              </p>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const renderReviewStep = () => {
+    return (
+      <>
+        <h3 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          Rishikimi dhe Dorëzimi
+        </h3>
+        
+        <div className="space-y-6">
+          <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+            <h4 className={`text-lg font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+              Informacionet Bazike
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Lloji i shpalljes:
+                </p>
+                <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  {listingType === 'sale' ? 'Në shitje' : 'Me qira'}
+                </p>
+              </div>
+              
+              <div>
+                <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Lloji i pronës:
+                </p>
+                <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  {propertyType === 'apartment' && 'Banesë'}
+                  {propertyType === 'house' && 'Shtëpi'}
+                  {propertyType === 'land' && 'Tokë'}
+                  {propertyType === 'commercial' && 'Lokal'}
+                </p>
+              </div>
+              
+              <div>
+                <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Titulli:
+                </p>
+                <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  {title}
+                </p>
+              </div>
+              
+              <div>
+                <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Çmimi:
+                </p>
+                <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  {price} € {listingType === 'rent' ? '/muaj' : ''}
+                </p>
+              </div>
+              
+              <div className="md:col-span-2">
+                <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Lokacioni:
+                </p>
+                <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  {location}
+                </p>
+              </div>
+              
+              <div className="md:col-span-2">
+                <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Përshkrimi:
+                </p>
+                <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  {description}
+                </p>
+              </div>
+            </div>
           </div>
           
-          <div className="pt-4">
+          <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+            <h4 className={`text-lg font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+              Detajet e Pronës
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {rooms && (
+                <div>
+                  <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Dhoma:
+                  </p>
+                  <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    {rooms}
+                  </p>
+                </div>
+              )}
+              
+              {bathrooms && (
+                <div>
+                  <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Banjo:
+                  </p>
+                  <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    {bathrooms}
+                  </p>
+                </div>
+              )}
+              
+              {area && (
+                <div>
+                  <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Sipërfaqja:
+                  </p>
+                  <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    {area} m²
+                  </p>
+                </div>
+              )}
+              
+              {buildingYear && (
+                <div>
+                  <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Viti i ndërtimit:
+                  </p>
+                  <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    {buildingYear}
+                  </p>
+                </div>
+              )}
+              
+              {floor && (
+                <div>
+                  <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Kati:
+                  </p>
+                  <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    {floor}
+                  </p>
+                </div>
+              )}
+              
+              {hasParking && (
+                <div>
+                  <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Parkimi:
+                  </p>
+                  <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    {parkingSpaces ? `${parkingSpaces} vende` : 'Ka parking'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {features.length > 0 && (
+            <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <h4 className={`text-lg font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                Karakteristikat
+              </h4>
+              
+              <div className="flex flex-wrap gap-2">
+                {features.map((feature, index) => (
+                  <span 
+                    key={index}
+                    className={`px-3 py-1 rounded-full text-sm ${
+                      darkMode ? 'bg-blue-900 text-blue-300' : 'bg-blue-50 text-blue-700'
+                    }`}
+                  >
+                    {feature}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {previewUrls.length > 0 && (
+            <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <h4 className={`text-lg font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                Fotot e pronës ({previewUrls.length})
+              </h4>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {previewUrls.map((url, index) => (
+                  <div key={index} className="aspect-square">
+                    <img 
+                      src={url} 
+                      alt={`Property preview ${index + 1}`} 
+                      className="w-full h-full object-cover rounded-md"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div className="border-t pt-6">
+            <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              Duke klikuar në butonin "Publiko pronën", ju pajtoheni me kushtet e përdorimit dhe konfirmoni që të gjitha të dhënat e dhëna janë të sakta.
+            </p>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case STEPS.BASIC_INFO:
+        return renderBasicInfoStep();
+      case STEPS.DETAILS:
+        return renderDetailsStep();
+      case STEPS.FEATURES:
+        return renderFeaturesStep();
+      case STEPS.IMAGES:
+        return renderImagesStep();
+      case STEPS.REVIEW:
+        return renderReviewStep();
+      default:
+        return renderBasicInfoStep();
+    }
+  };
+
+  const renderStepNavigation = () => {
+    return (
+      <div className="flex justify-between mt-8">
+        {currentStep > STEPS.BASIC_INFO ? (
+          <button
+            type="button"
+            onClick={prevStep}
+            className={`flex items-center px-4 py-2 rounded-md ${
+              darkMode 
+                ? 'bg-gray-700 text-white hover:bg-gray-600' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <ChevronLeft className="h-5 w-5 mr-2" />
+            Kthehu mbrapa
+          </button>
+        ) : (
+          <div></div> // Empty div to maintain flex spacing
+        )}
+        
+        {currentStep < STEPS.REVIEW ? (
+          <button
+            type="button"
+            onClick={nextStep}
+            disabled={!stepValidation[currentStep]}
+            className={`flex items-center px-6 py-2 rounded-md font-medium ${
+              stepValidation[currentStep]
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : darkMode 
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            Vazhdo
+            <ChevronRight className="h-5 w-5 ml-2" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex items-center bg-blue-600 text-white hover:bg-blue-700 px-6 py-2 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Duke publikuar...
+              </>
+            ) : (
+              <>
+                Publiko pronën
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  if (success) {
+    return (
+      <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6 animate-fadeIn`}>
+        <div className="text-center py-8">
+          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+            <Check className="h-8 w-8 text-green-600" />
+          </div>
+          <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>Prona u shtua me sukses!</h2>
+          <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-8`}>
+            Prona juaj tani është në dispozicion për klientët potencialë për ta shikuar.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              onClick={() => setSuccess(false)}
+              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center"
             >
-              {isSubmitting ? 'Duke u dërguar...' : 'Shto pronën'}
+              <Plus className="h-5 w-5 mr-2" />
+              Shto një pronë tjetër
+            </button>
+            <button
+              onClick={() => window.location.href = '/my-properties'}
+              className={`px-6 py-3 rounded-md flex items-center justify-center ${
+                darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <Home className="h-5 w-5 mr-2" />
+              Shko tek pronat e mia
             </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6 animate-fadeIn`}>
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg flex items-start">
+          <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <p>{error}</p>
+        </div>
+      )}
+      
+      {renderStepIndicator()}
+      
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        if (currentStep === STEPS.REVIEW) {
+          handleSubmit(e);
+        } else {
+          nextStep();
+        }
+      }}>
+        {renderCurrentStep()}
+        {renderStepNavigation()}
       </form>
     </div>
   );

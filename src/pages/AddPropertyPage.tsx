@@ -1,6 +1,6 @@
 import React from 'react';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+// import Navbar from '../components/Navbar';
+// import Footer from '../components/Footer';
 import AddPropertyForm from '../components/AddPropertyForm';
 import { useAuth } from '../context/AuthContext';
 import { Building, LogIn } from 'lucide-react';
@@ -10,8 +10,7 @@ const AddPropertyPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
-      
+      {/* <Navbar /> */}
       <main className="flex-grow py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {authState.isAuthenticated ? (
@@ -20,7 +19,6 @@ const AddPropertyPage: React.FC = () => {
                 <h1 className="text-3xl font-bold text-gray-900">Shto një pronë të re</h1>
                 <p className="mt-2 text-gray-600">Plotësoni formularin më poshtë për të shtuar një pronë të re në platformën tonë</p>
               </div>
-              
               <AddPropertyForm 
                 onSuccess={() => {
                   // Scroll to top
@@ -46,8 +44,7 @@ const AddPropertyPage: React.FC = () => {
           )}
         </div>
       </main>
-      
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };
