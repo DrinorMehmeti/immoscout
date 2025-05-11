@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { Property } from '../types';
 import TagInput from './TagInput';
-import { MapPin, Euro, Building, BedDouble, Bath, Square, Image as ImageIcon, Upload, X, CheckCircle } from 'lucide-react';
+import { MapPin, Euro, Building, BedDouble, Bath, Square, Image as ImageIcon, Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface AddPropertyFormProps {
@@ -22,7 +22,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const [price, setPrice] = useState('');
   const [location, setLocation] = useState('');
   const [propertyType, setPropertyType] = useState<Property['type']>('apartment');
-  const [listingType, setListingType] = useState<Property['listing_type']>('sale');
+  const [listingType, setListingType] = useState<'rent' | 'sale'>('sale');
   const [rooms, setRooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
   const [area, setArea] = useState('');
@@ -110,12 +110,19 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         throw new Error('Please fill in all required fields');
       }
       
+      // Validate listing type explicitly
+      if (listingType !== 'rent' && listingType !== 'sale') {
+        throw new Error('Invalid listing type. Must be "rent" or "sale".');
+      }
+      
       let imageUrls: string[] = [];
       
       // Upload images if any
       if (images.length > 0) {
         imageUrls = await uploadImages();
       }
+      
+      console.log("Submitting property with listing_type:", listingType);
       
       // Create the property in the database
       const propertyData = {
