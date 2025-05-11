@@ -16,6 +16,9 @@ import MyPropertiesPage from './pages/MyPropertiesPage';
 import PremiumPage from './pages/PremiumPage';
 import AddPropertyPage from './pages/AddPropertyPage';
 import PropertyDetail from './pages/PropertyDetail';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminProperties from './pages/admin/AdminProperties';
 
 // The main app content for non-authenticated users
 const LandingPage = () => {
@@ -203,6 +206,28 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return authState.isAuthenticated ? <>{children}</> : null;
 };
 
+// Admin specific protected route
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { authState } = useAuth();
+  const navigate = useNavigate();
+
+  // In a real app you'd check for admin role
+  // This is a placeholder for demonstration
+  const isAdmin = authState.isAuthenticated;
+
+  useEffect(() => {
+    if (!isAdmin && !authState.isLoading) {
+      navigate('/login');
+    }
+  }, [isAdmin, authState.isLoading, navigate]);
+
+  if (authState.isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  return isAdmin ? <>{children}</> : null;
+};
+
 function App() {
   const { authState } = useAuth();
   const { darkMode } = useTheme();
@@ -220,24 +245,36 @@ function App() {
 
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
-      <Navbar />
+      {/* Don't show navbar on admin pages */}
+      {!window.location.pathname.startsWith('/admin') && <Navbar />}
       
-      <main className="flex-grow pt-16">
+      <main className={`flex-grow ${!window.location.pathname.startsWith('/admin') ? 'pt-16' : ''}`}>
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/listings" element={<ListingsPage />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
+          
+          {/* Protected routes */}
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/my-properties" element={<ProtectedRoute><MyPropertiesPage /></ProtectedRoute>} />
           <Route path="/add-property" element={<ProtectedRoute><AddPropertyPage /></ProtectedRoute>} />
           <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
+          
+          {/* Admin routes */}
+          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+          <Route path="/admin/properties" element={<AdminRoute><AdminProperties /></AdminRoute>} />
+          
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       
-      <Footer />
+      {/* Don't show footer on admin pages */}
+      {!window.location.pathname.startsWith('/admin') && <Footer />}
     </div>
   );
 }
