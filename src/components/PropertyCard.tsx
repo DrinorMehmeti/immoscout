@@ -41,6 +41,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   // State for actual view and favorite counts
   const [viewCount, setViewCount] = useState<number>(0);
   const [favoriteCount, setFavoriteCount] = useState<number>(0);
+  const [isFavorite, setIsFavorite] = useState(false);
   
   // Load property images from database
   useEffect(() => {
@@ -109,6 +110,32 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     
     fetchStatistics();
   }, [property.id, isOwner]);
+
+  // Check if the current user has favorited this property
+  useEffect(() => {
+    if (!property.id || !authState.user) return;
+    
+    const checkFavorite = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('favorites')
+          .select('*')
+          .eq('property_id', property.id)
+          .eq('user_id', authState.user.id)
+          .maybeSingle();
+          
+        if (error) {
+          console.error('Error checking favorite status:', error);
+        } else {
+          setIsFavorite(!!data);
+        }
+      } catch (err) {
+        console.error('Exception checking favorite status:', err);
+      }
+    };
+    
+    checkFavorite();
+  }, [property.id, authState.user]);
   
   // Clean up preview URLs when component unmounts
   useEffect(() => {
@@ -158,6 +185,43 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     // Optional: Seite neu laden oder Property aus Liste entfernen
   };
 
+  // Toggle favorite
+  const handleToggleFavorite = async () => {
+    if (!authState.isAuthenticated) {
+      alert('Ju duhet të kyçeni për të shtuar prona në favorite');
+      return;
+    }
+    
+    try {
+      if (isFavorite) {
+        // Remove from favorites
+        await supabase
+          .from('favorites')
+          .delete()
+          .eq('property_id', property.id)
+          .eq('user_id', authState.user!.id);
+      } else {
+        // Add to favorites
+        await supabase
+          .from('favorites')
+          .insert({
+            property_id: property.id,
+            user_id: authState.user!.id
+          });
+      }
+      
+      // Update local state
+      setIsFavorite(!isFavorite);
+      
+      // Update favorite count
+      if (isOwner) {
+        setFavoriteCount(prevCount => isFavorite ? Math.max(0, prevCount - 1) : prevCount + 1);
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
+
   return (
     <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden relative ${property.featured ? 'ring-4 ring-yellow-400' : ''}`}>
       {/* Status-Badge oben rechts */}
@@ -184,6 +248,20 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
         <div className={`absolute bottom-0 left-0 ${listingTypeLabel.bg} text-white px-2 py-1 text-xs font-bold`}>
           {listingTypeLabel.text}
         </div>
+        
+        {/* Favorite heart icon in top-right */}
+        {authState.isAuthenticated && (
+          <button 
+            onClick={handleToggleFavorite}
+            className={`absolute top-2 right-2 p-2 rounded-full ${
+              isFavorite 
+                ? 'bg-pink-100 text-pink-600' 
+                : 'bg-white/70 text-gray-600 hover:bg-white'
+            }`}
+          >
+            <Heart className={`h-5 w-5 ${isFavorite ? 'fill-pink-600' : ''}`} />
+          </button>
+        )}
       </div>
       <div className="p-4">
         <div className="flex justify-between items-start">

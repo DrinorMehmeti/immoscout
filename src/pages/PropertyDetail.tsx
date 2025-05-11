@@ -17,6 +17,7 @@ const PropertyDetail: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [checkingFavorite, setCheckingFavorite] = useState(true);
   const [viewTracked, setViewTracked] = useState(false);
+  const [favoriteCount, setFavoriteCount] = useState(0);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -89,9 +90,30 @@ const PropertyDetail: React.FC = () => {
         setCheckingFavorite(false);
       }
     };
+
+    // Get favorite count
+    const getFavoriteCount = async () => {
+      if (!id) return;
+      
+      try {
+        const { count, error } = await supabase
+          .from('favorites')
+          .select('*', { count: 'exact', head: true })
+          .eq('property_id', id);
+          
+        if (error) {
+          console.error('Error fetching favorite count:', error);
+        } else {
+          setFavoriteCount(count || 0);
+        }
+      } catch (err) {
+        console.error('Exception fetching favorite count:', err);
+      }
+    };
     
     fetchProperty();
     checkFavorite();
+    getFavoriteCount();
   }, [id, authState.user, viewTracked]);
 
   // Function to track a property view
@@ -139,6 +161,8 @@ const PropertyDetail: React.FC = () => {
           .delete()
           .eq('property_id', property.id)
           .eq('user_id', authState.user!.id);
+          
+        setFavoriteCount(prevCount => Math.max(0, prevCount - 1));
       } else {
         // Add to favorites
         await supabase
@@ -147,6 +171,8 @@ const PropertyDetail: React.FC = () => {
             property_id: property.id,
             user_id: authState.user!.id
           });
+          
+        setFavoriteCount(prevCount => prevCount + 1);
       }
       
       setIsFavorite(!isFavorite);
@@ -384,6 +410,13 @@ const PropertyDetail: React.FC = () => {
                   <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Postuar më</span>
                   <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                     {property.created_at ? new Date(property.created_at).toLocaleDateString('sq-AL') : 'N/A'}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Në favorite</span>
+                  <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {favoriteCount}
                   </span>
                 </div>
               </div>
