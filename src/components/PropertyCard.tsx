@@ -200,6 +200,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           .delete()
           .eq('property_id', property.id)
           .eq('user_id', authState.user!.id);
+          
+        setFavoriteCount(prevCount => Math.max(0, prevCount - 1));
       } else {
         // Add to favorites
         await supabase
@@ -208,15 +210,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
             property_id: property.id,
             user_id: authState.user!.id
           });
+          
+        setFavoriteCount(prevCount => isFavorite ? prevCount : prevCount + 1);
       }
       
-      // Update local state
       setIsFavorite(!isFavorite);
-      
-      // Update favorite count
-      if (isOwner) {
-        setFavoriteCount(prevCount => isFavorite ? Math.max(0, prevCount - 1) : prevCount + 1);
-      }
     } catch (err) {
       console.error('Error toggling favorite:', err);
     }

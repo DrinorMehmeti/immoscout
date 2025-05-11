@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Property } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import PropertyDetailAnalytics from '../components/PropertyDetailAnalytics';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -217,6 +218,9 @@ const PropertyDetail: React.FC = () => {
   // Format price with thousands separator
   const formattedPrice = property?.price.toLocaleString();
 
+  // Check if the current user is the property owner
+  const isPropertyOwner = property?.owner_id === authState.user?.id;
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -361,6 +365,14 @@ const PropertyDetail: React.FC = () => {
                   ))}
                 </div>
               </div>
+            )}
+            
+            {/* Property analytics for owners */}
+            {isPropertyOwner && (
+              <PropertyDetailAnalytics 
+                propertyId={property.id} 
+                isOwner={isPropertyOwner} 
+              />
             )}
           </div>
           
