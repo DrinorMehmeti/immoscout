@@ -34,9 +34,7 @@ interface Property {
   status: string;
   featured: boolean;
   owner_id: string;
-  profiles?: {
-    name: string;
-  };
+  owner_name?: string; // Changed from profiles?.name
   view_count?: number;
   favorite_count?: number;
 }
@@ -65,14 +63,10 @@ const AdminProperties: React.FC = () => {
   const fetchProperties = async () => {
     setLoading(true);
     try {
+      // Fetch properties
       let query = supabase
         .from('properties')
-        .select(`
-          *,
-          profiles (
-            name
-          )
-        `, { count: 'exact' });
+        .select('*', { count: 'exact' });
       
       // Apply filters
       if (propertyTypeFilter) {
@@ -104,6 +98,25 @@ const AdminProperties: React.FC = () => {
         throw error;
       }
       
+      // Get the property owners information
+      const propertyOwnerIds = data?.map(property => property.owner_id) || [];
+      
+      // Get owner profiles
+      const { data: ownerProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', propertyOwnerIds);
+        
+      if (profilesError) {
+        throw profilesError;
+      }
+      
+      // Create a map of owner_id to name
+      const ownerNameMap = new Map();
+      ownerProfiles?.forEach(profile => {
+        ownerNameMap.set(profile.id, profile.name);
+      });
+      
       // Fetch view counts for each property
       const propertyIds = data?.map(property => property.id) || [];
       
@@ -127,9 +140,10 @@ const AdminProperties: React.FC = () => {
       const viewResults = await Promise.all(viewCountPromises);
       const favoriteResults = await Promise.all(favoriteCountPromises);
       
-      // Add view and favorite counts to properties
+      // Add view and favorite counts to properties and add owner names
       const propertiesWithCounts = data?.map((property, index) => ({
         ...property,
+        owner_name: ownerNameMap.get(property.owner_id) || 'N/A',
         view_count: viewResults[index].count || 0,
         favorite_count: favoriteResults[index].count || 0
       }));
@@ -416,7 +430,7 @@ const AdminProperties: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 dark:text-white">
-                        {property.profiles?.name || 'N/A'}
+                        {property.owner_name || 'N/A'}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
                         ID: {property.owner_id.slice(0, 8)}...
