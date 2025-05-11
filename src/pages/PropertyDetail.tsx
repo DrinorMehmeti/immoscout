@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Euro, BedDouble, Bath, Square, Heart, Share, ArrowLeft, Calendar, User } from 'lucide-react';
+import { MapPin, Heart, Share, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Property } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import PropertyMap from '../components/PropertyMap';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,7 +37,19 @@ const PropertyDetail: React.FC = () => {
           throw error;
         }
         
-        setProperty(data);
+        const propertyData: Property = {
+          ...data,
+          type: data.type as Property['type'],
+          listing_type: data.listing_type as Property['listing_type'],
+          status: data.status as Property['status'],
+          images: data.images || undefined,
+          features: data.features || undefined,
+          featured: data.featured || undefined,
+          created_at: data.created_at || undefined,
+          updated_at: data.updated_at || undefined
+        };
+        
+        setProperty(propertyData);
       } catch (err) {
         console.error('Error fetching property:', err);
         setError('Ndodhi një gabim gjatë marrjes së të dhënave të pronës');
@@ -270,6 +283,18 @@ const PropertyDetail: React.FC = () => {
               <p className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 {property.description}
               </p>
+            </div>
+
+            {/* Location Map */}
+            <div className={`mt-8 ${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-md`}>
+              <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Vendndodhja</h2>
+              {property && <PropertyMap location={property.location} darkMode={darkMode} />}
+              <div className="mt-4 flex items-center">
+                <MapPin className={`h-5 w-5 ${darkMode ? 'text-blue-400' : 'text-blue-600'} mr-2`} />
+                <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {property.location}
+                </span>
+              </div>
             </div>
             
             {/* Property features */}
