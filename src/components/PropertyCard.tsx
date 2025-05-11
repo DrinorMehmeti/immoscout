@@ -4,6 +4,7 @@ import { MapPin, Euro, BedDouble, Bath, Square, Star, Image, Edit, Trash2, Check
 import { useTheme } from '../context/ThemeContext';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 interface Property extends PropertyType {
   views?: number;
@@ -29,10 +30,13 @@ const statusLabels: Record<string, string> = {
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const { darkMode } = useTheme();
+  const { authState } = useAuth();
   const [imageError, setImageError] = useState(false);
   const [propertyImages, setPropertyImages] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const status = property.status || 'active';
+  
+  const isOwner = authState.user && authState.user.id === property.owner_id;
   
   // Load property images from database
   useEffect(() => {
@@ -213,15 +217,20 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           >
             Shiko detajet
           </Link>
-          <div className="flex justify-center gap-2 mt-1">
-            <Link to={`/edit-property/${property.id}`} className="flex items-center px-3 py-1 bg-gray-100 hover:bg-blue-100 text-blue-700 rounded text-xs font-medium">
-              <Edit className="h-4 w-4 mr-1" /> Ndrysho
-            </Link>
-            <button onClick={() => setShowDeleteConfirm(true)} className="flex items-center px-3 py-1 bg-gray-100 hover:bg-red-100 text-red-700 rounded text-xs font-medium">
-              <Trash2 className="h-4 w-4 mr-1" /> Fshije
-            </button>
-          </div>
+          
+          {/* Only show edit/delete buttons to the property owner */}
+          {isOwner && (
+            <div className="flex justify-center gap-2 mt-1">
+              <Link to={`/edit-property/${property.id}`} className="flex items-center px-3 py-1 bg-gray-100 hover:bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                <Edit className="h-4 w-4 mr-1" /> Ndrysho
+              </Link>
+              <button onClick={() => setShowDeleteConfirm(true)} className="flex items-center px-3 py-1 bg-gray-100 hover:bg-red-100 text-red-700 rounded text-xs font-medium">
+                <Trash2 className="h-4 w-4 mr-1" /> Fshije
+              </button>
+            </div>
+          )}
         </div>
+        
         {/* Delete-Bestätigung */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
