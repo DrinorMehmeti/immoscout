@@ -32,9 +32,9 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [bucketStatus, setBucketStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
 
-  // Check if the bucket exists on component mount
+  // Check if the bucket exists and create it if it doesn't
   useEffect(() => {
-    const checkBucket = async () => {
+    const checkAndCreateBucket = async () => {
       try {
         // First check if we can list buckets
         const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
@@ -49,9 +49,21 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         const propertyBucket = buckets.find(bucket => bucket.name === 'property-images');
         
         if (!propertyBucket) {
-          console.error('Property images bucket not found');
-          setBucketStatus('unavailable');
-          return;
+          console.log('Property images bucket not found, attempting to create it');
+          
+          // Try to create the bucket
+          const { data: newBucket, error: createError } = await supabase.storage.createBucket('property-images', {
+            public: true,
+            fileSizeLimit: 5242880 // 5MB in bytes
+          });
+          
+          if (createError) {
+            console.error('Error creating bucket:', createError);
+            setBucketStatus('unavailable');
+            return;
+          }
+          
+          console.log('Successfully created property-images bucket');
         }
         
         // Try to list some files in the bucket to confirm access
@@ -75,7 +87,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       }
     };
     
-    checkBucket();
+    checkAndCreateBucket();
   }, []);
 
   // Clean up preview URLs when component unmounts
