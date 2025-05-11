@@ -32,47 +32,17 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [bucketStatus, setBucketStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
 
-  // Check if the bucket exists and create it if it doesn't
+  // Check if the bucket exists without trying to create it
   useEffect(() => {
-    const checkAndCreateBucket = async () => {
+    const checkBucketAvailability = async () => {
       try {
-        // First check if we can list buckets
-        const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-        
-        if (bucketError) {
-          console.error('Error checking buckets:', bucketError);
-          setBucketStatus('unavailable');
-          return;
-        }
-        
-        // Check if our specific bucket exists
-        const propertyBucket = buckets.find(bucket => bucket.name === 'property-images');
-        
-        if (!propertyBucket) {
-          console.log('Property images bucket not found, attempting to create it');
-          
-          // Try to create the bucket
-          const { data: newBucket, error: createError } = await supabase.storage.createBucket('property-images', {
-            public: true,
-            fileSizeLimit: 5242880 // 5MB in bytes
-          });
-          
-          if (createError) {
-            console.error('Error creating bucket:', createError);
-            setBucketStatus('unavailable');
-            return;
-          }
-          
-          console.log('Successfully created property-images bucket');
-        }
-        
-        // Try to list some files in the bucket to confirm access
+        // Check if we can access the property-images bucket
         const { data: files, error: listError } = await supabase.storage
           .from('property-images')
           .list();
           
         if (listError) {
-          console.error('Error listing files in bucket:', listError);
+          console.error('Error accessing bucket:', listError);
           setBucketStatus('unavailable');
           return;
         }
@@ -87,7 +57,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       }
     };
     
-    checkAndCreateBucket();
+    checkBucketAvailability();
   }, []);
 
   // Clean up preview URLs when component unmounts
