@@ -44,7 +44,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     }
   }, [isAdmin, authState.isLoading, navigate]);
 
-  // If auth is still loading or user is not admin, show loading or redirect
+  // If auth is still loading, show loading spinner
   if (authState.isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -53,8 +53,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     );
   }
 
+  // If user is not admin, return null (will redirect in useEffect)
   if (!isAdmin) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   return (

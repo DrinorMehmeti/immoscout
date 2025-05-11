@@ -81,8 +81,7 @@ const AdminUsers: React.FC = () => {
         throw error;
       }
       
-      // We can't use auth.admin.listUsers, so we'll just use the profile data
-      // Email information would need to be fetched another way or stored in profiles
+      // Use the profiles data directly
       if (data) {
         setUsers(data);
       }
