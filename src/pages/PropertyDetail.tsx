@@ -16,6 +16,7 @@ const PropertyDetail: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [checkingFavorite, setCheckingFavorite] = useState(true);
+  const [viewTracked, setViewTracked] = useState(false);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -49,6 +50,11 @@ const PropertyDetail: React.FC = () => {
         };
         
         setProperty(propertyData);
+
+        // Track a view only once per session
+        if (!viewTracked && id) {
+          trackPropertyView(id);
+        }
       } catch (err) {
         console.error('Error fetching property:', err);
         setError('Ndodhi një gabim gjatë marrjes së të dhënave të pronës');
@@ -86,7 +92,35 @@ const PropertyDetail: React.FC = () => {
     
     fetchProperty();
     checkFavorite();
-  }, [id, authState.user]);
+  }, [id, authState.user, viewTracked]);
+
+  // Function to track a property view
+  const trackPropertyView = async (propertyId: string) => {
+    try {
+      // Get user agent information
+      const userAgent = navigator.userAgent;
+      
+      const viewData = {
+        property_id: propertyId,
+        viewer_id: authState.user?.id || null,
+        user_agent: userAgent
+      };
+      
+      const { error } = await supabase
+        .from('property_views')
+        .insert([viewData]);
+        
+      if (error) {
+        console.error('Error tracking view:', error);
+        return;
+      }
+      
+      setViewTracked(true);
+      console.log('Successfully tracked property view');
+    } catch (err) {
+      console.error('Exception tracking view:', err);
+    }
+  };
 
   const handleToggleFavorite = async () => {
     if (!authState.isAuthenticated) {
