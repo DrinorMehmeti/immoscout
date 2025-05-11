@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Home, Building, Plus, Settings, User, LogOut, Bell, Star } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import NotificationBell from '../components/NotificationBell';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { authState, logout } = useAuth();
   const { darkMode } = useTheme();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} flex flex-col`}>
@@ -67,39 +69,42 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   }`} />
                   Bëhu premium
                 </Link>
-                <a
-                  href="#"
-                  className={`flex items-center py-2 px-3 rounded-md group ${
-                    darkMode ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
+                <div className={`flex items-center py-2 px-3 rounded-md group ${
+                  location.pathname === '/notifications' 
+                    ? darkMode ? 'bg-gray-700 text-white' : 'bg-blue-50 text-blue-700' 
+                    : darkMode ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-700 hover:bg-gray-100'
+                }`}>
                   <Bell className={`h-5 w-5 mr-3 ${
                     darkMode ? 'text-gray-400 group-hover:text-gray-300' : 'text-gray-500 group-hover:text-gray-700'
                   }`} />
                   Njoftime
-                </a>
-                <a
-                  href="#"
+                </div>
+                <Link
+                  to="/settings"
                   className={`flex items-center py-2 px-3 rounded-md group ${
-                    darkMode ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-700 hover:bg-gray-100'
+                    location.pathname === '/settings' 
+                      ? darkMode ? 'bg-gray-700 text-white' : 'bg-blue-50 text-blue-700' 
+                      : darkMode ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <Settings className={`h-5 w-5 mr-3 ${
                     darkMode ? 'text-gray-400 group-hover:text-gray-300' : 'text-gray-500 group-hover:text-gray-700'
                   }`} />
                   Cilësimet
-                </a>
-                <a
-                  href="#"
+                </Link>
+                <Link
+                  to="/profile"
                   className={`flex items-center py-2 px-3 rounded-md group ${
-                    darkMode ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-700 hover:bg-gray-100'
+                    location.pathname === '/profile' 
+                      ? darkMode ? 'bg-gray-700 text-white' : 'bg-blue-50 text-blue-700' 
+                      : darkMode ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <User className={`h-5 w-5 mr-3 ${
                     darkMode ? 'text-gray-400 group-hover:text-gray-300' : 'text-gray-500 group-hover:text-gray-700'
                   }`} />
                   Profili im
-                </a>
+                </Link>
                 <button
                   onClick={logout}
                   className={`flex items-center py-2 px-3 rounded-md group w-full text-left ${
@@ -112,6 +117,28 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   Dilni
                 </button>
               </nav>
+
+              {/* Mobile menu toggle (visible on smaller screens) */}
+              <div className="md:hidden mt-4">
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className={`w-full flex items-center justify-between p-2 text-sm font-medium rounded ${
+                    darkMode 
+                      ? 'bg-gray-700 text-white' 
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  <span>Menuja</span>
+                  <svg 
+                    className={`h-5 w-5 transform ${mobileMenuOpen ? 'rotate-180' : ''}`} 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 20 20" 
+                    fill="currentColor"
+                  >
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
             </div>
             {/* Main content */}
             <div className="flex-1">

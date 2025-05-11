@@ -3,6 +3,7 @@ import { Menu, X, User, Home, LogOut, Building, Plus, Moon, Sun } from 'lucide-r
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Link, useLocation } from 'react-router-dom';
+import NotificationBell from './NotificationBell';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -89,6 +90,9 @@ const Navbar: React.FC = () => {
             {/* Authentication/User actions */}
             {authState.isAuthenticated ? (
               <div className="flex items-center space-x-4">
+                {/* Notification Bell */}
+                <NotificationBell />
+                
                 <Link 
                   to="/dashboard" 
                   className={`flex items-center text-sm font-medium ${darkMode ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'} transition-colors px-3 py-2 rounded-md`}
@@ -151,12 +155,19 @@ const Navbar: React.FC = () => {
           {/* Mobile menu button */}
           <div className="flex items-center md:hidden">
             {authState.isAuthenticated && (
-              <Link 
-                to="/add-property" 
-                className="mr-2 flex items-center bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                <Plus className="h-5 w-5" />
-              </Link>
+              <>
+                {/* Mobile notification bell */}
+                <div className="mr-2">
+                  <NotificationBell />
+                </div>
+                
+                <Link 
+                  to="/add-property" 
+                  className="mr-2 flex items-center bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Plus className="h-5 w-5" />
+                </Link>
+              </>
             )}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Euro, Upload, X, Info, BedDouble, Bath, Square, Calendar, Building2, Car, ArrowRight, ChevronLeft, ChevronRight, Home, Check, Plus } from 'lucide-react';
+import { MapPin, Euro, Upload, X, Info, BedDouble, Bath, Square, Calendar, Building2, Car, ArrowRight, ChevronLeft, ChevronRight, Home, Check, Plus, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
@@ -26,7 +26,7 @@ interface FormData {
   price: string;
   location: string;
   propertyType: string;
-  status: string;
+  listingType: string;
   bedrooms: string;
   bathrooms: string;
   area: string;
@@ -52,7 +52,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
     price: '',
     location: '',
     propertyType: 'apartment',
-    status: 'for-sale',
+    listingType: 'sale',
     bedrooms: '',
     bathrooms: '',
     area: '',
@@ -82,7 +82,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
   useEffect(() => {
     const checkBucketAvailability = async () => {
       try {
-        // Check if we can access the property-images bucket
+        // Check if we can access the property_images bucket (note the underscore)
         const { error: listError } = await supabase.storage
           .from('property_images')
           .list();
@@ -239,45 +239,37 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
         throw new Error('Ju lutemi vendosni një çmim të vlefshëm më të madh se 0.');
       }
       
-      // Prepare listing_type from status form field
-      // Convert "for-sale" to "sale" and "for-rent" to "rent" for database
-      const listingType = formData.status === 'for-sale' ? 'sale' : 'rent';
-      
       // Upload images to Supabase Storage
       const uploadedImageUrls: string[] = [];
       
       if (formData.images.length > 0 && bucketStatus === 'available') {
-        const bucketName = 'property_images'; // Changed from 'property-images' to 'property_images' to match migration
+        const bucketName = 'property_images'; // Using underscore instead of hyphen
         
-        // We'll process images one by one and log errors, but continue submission
-        for (const image of formData.images) {
-          try {
+        try {
+          for (const image of formData.images) {
             const fileExt = image.name.split('.').pop();
             const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
             const filePath = `properties/${authState.user.id}/${fileName}`;
             
-            // Upload the file
             const { error: uploadError } = await supabase.storage
               .from(bucketName)
               .upload(filePath, image);
               
             if (uploadError) {
-              console.error('Error uploading image:', uploadError);
-              continue; // Skip this image and continue with the next
+              console.error('Error in upload process:', uploadError);
+              // Continue without this image
+              continue;
             }
             
-            // Get the public URL only if upload was successful
-            const { data } = supabase.storage
+            const { data: { publicUrl } } = supabase.storage
               .from(bucketName)
               .getPublicUrl(filePath);
               
-            if (data && data.publicUrl) {
-              uploadedImageUrls.push(data.publicUrl);
-            }
-          } catch (uploadErr) {
-            console.error('Exception during image upload:', uploadErr);
-            // Continue with next image
+            uploadedImageUrls.push(publicUrl);
           }
+        } catch (uploadErr) {
+          console.error('Error in upload process:', uploadErr);
+          // Continue without images
         }
       }
       
@@ -291,7 +283,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
           price: priceValue,
           location: formData.location,
           type: formData.propertyType,
-          listing_type: listingType,
+          listing_type: formData.listingType,
           rooms: formData.bedrooms ? parseInt(formData.bedrooms, 10) : null,
           bathrooms: formData.bathrooms ? parseInt(formData.bathrooms, 10) : null,
           area: formData.area ? parseFloat(formData.area) : null,
@@ -313,7 +305,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
         price: '',
         location: '',
         propertyType: 'apartment',
-        status: 'for-sale',
+        listingType: 'sale',
         bedrooms: '',
         bathrooms: '',
         area: '',
@@ -408,28 +400,28 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
               Lloji i shpalljes
             </label>
             <div className="flex space-x-4">
-              <label className={`flex items-center px-4 py-2 rounded-lg border ${formData.status === 'for-sale' 
+              <label className={`flex items-center px-4 py-2 rounded-lg border ${formData.listingType === 'sale' 
                 ? darkMode ? 'bg-blue-900 border-blue-700 text-blue-300' : 'bg-blue-50 border-blue-500 text-blue-700' 
                 : darkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-700'}`}>
                 <input
                   type="radio"
                   name="listingType"
-                  value="for-sale"
-                  checked={formData.status === 'for-sale'}
-                  onChange={(e) => setFormData(prev => ({ ...prev, status: 'for-sale' }))}
+                  value="sale"
+                  checked={formData.listingType === 'sale'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, listingType: 'sale' }))}
                   className="sr-only"
                 />
                 <span>Në shitje</span>
               </label>
-              <label className={`flex items-center px-4 py-2 rounded-lg border ${formData.status === 'for-rent' 
+              <label className={`flex items-center px-4 py-2 rounded-lg border ${formData.listingType === 'rent' 
                 ? darkMode ? 'bg-blue-900 border-blue-700 text-blue-300' : 'bg-blue-50 border-blue-500 text-blue-700' 
                 : darkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-700'}`}>
                 <input
                   type="radio"
                   name="listingType"
-                  value="for-rent"
-                  checked={formData.status === 'for-rent'}
-                  onChange={(e) => setFormData(prev => ({ ...prev, status: 'for-rent' }))}
+                  value="rent"
+                  checked={formData.listingType === 'rent'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, listingType: 'rent' }))}
                   className="sr-only"
                 />
                 <span>Me qira</span>
@@ -538,7 +530,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="price" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Çmimi ({formData.status === 'for-rent' ? 'mujor' : 'total'})
+                Çmimi ({formData.listingType === 'rent' ? 'mujor' : 'total'})
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -951,18 +943,18 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
           </p>
           
           {bucketStatus === 'checking' && (
-            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg flex items-start">
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg flex items-start">
               <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-              <p>Duke kontrolluar nëse funksioni i ngarkimit të fotove është i disponueshëm...</p>
+              <p>Duke kontrolluar disponueshmërinë e ruajtjes së fotove...</p>
             </div>
           )}
           
           {bucketStatus === 'unavailable' && (
-            <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg flex items-start">
-              <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 rounded-lg flex items-start">
+              <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">Ngarkimi i fotove nuk është aktualisht i disponueshëm</p>
-                <p className="mt-1">Ju mund të vazhdoni të shtoni pronën pa foto dhe t'i shtoni ato më vonë. Administratori juaj duhet të krijojë bucket-in e ruajtjes 'property_images' në Supabase.</p>
+                <p className="font-medium">Vërejtje: Ruajtja e fotove është përkohësisht e padisponueshme</p>
+                <p className="mt-1">Ju mund të vazhdoni pa foto për momentin dhe t'i shtoni ato më vonë. Prona juaj do të publikohet pa foto.</p>
               </div>
             </div>
           )}
@@ -995,7 +987,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
                     Kliko për të ngarkuar foto
                     <br />
                     <span className="text-xs">
-                      {10 - previewUrls.length} fotot e mbetura
+                      {10 - previewUrls.length} foto të mbetura
                     </span>
                   </span>
                   <input
@@ -1022,21 +1014,12 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
                   <li>Madhësia maksimale e skedarit: 5MB për foto</li>
                 </ul>
               </div>
-            ) : bucketStatus === 'checking' ? (
-              <div className="flex justify-center my-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-              </div>
             ) : (
-              <div>
-                <h4 className={`text-sm font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-700'}`}>
-                  Shënim për administratorët:
-                </h4>
-                <ul className={`list-disc pl-5 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  <li>Problemi: Bucket-i 'property_images' mungon në Supabase Storage</li>
-                  <li>Për të aktivizuar ngarkimin e fotove, administratori duhet të krijojë një bucket të ri me emrin 'property_images'</li>
-                  <li>Pastaj duhet të vendosen politikat e sigurisë për lexim publik dhe shkrim nga përdoruesit e autentifikuar</li>
-                </ul>
-              </div>
+              bucketStatus === 'unavailable' && (
+                <p className={`text-sm ${darkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>
+                  Ngarkimi i fotove nuk është i disponueshëm për momentin. Mund të vazhdoni të shtoni pronën pa foto.
+                </p>
+              )
             )}
           </div>
         </div>
@@ -1051,15 +1034,18 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
           Rishikimi dhe Dorëzimi
         </h3>
         
-        <div className="space-y-6">
-          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg flex items-start">
-            <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium">Prona juaj do të jetë në gjendje "Në pritje"</p>
-              <p className="mt-1">Administratorët e platformës do ta rishikojnë pronën tuaj para se të aktivizohet në platformë. Ky proces zakonisht zgjat 24-48 orë.</p>
-            </div>
+        {/* Add approval notice */}
+        <div className={`p-4 mb-6 rounded-lg ${
+          darkMode ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-700'
+        } flex items-start`}>
+          <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Prona juaj do të duhet të aprovohet nga administratorët</p>
+            <p className="mt-1">Pas shtimit, prona juaj do të jetë në statusin "Në pritje" derisa të aprovohet nga administratorët tanë. Ky proces zakonisht zgjat 24-48 orë.</p>
           </div>
-          
+        </div>
+        
+        <div className="space-y-6">
           <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
             <h4 className={`text-lg font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               Informacionet Bazike
@@ -1071,7 +1057,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
                   Lloji i shpalljes:
                 </p>
                 <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                  {formData.status === 'for-sale' ? 'Në shitje' : 'Me qira'}
+                  {formData.listingType === 'sale' ? 'Në shitje' : 'Me qira'}
                 </p>
               </div>
               
@@ -1101,7 +1087,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
                   Çmimi:
                 </p>
                 <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                  {formData.price} € {formData.status === 'for-rent' ? '/muaj' : ''}
+                  {formData.price} € {formData.listingType === 'rent' ? '/muaj' : ''}
                 </p>
               </div>
               
@@ -1220,7 +1206,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
             </div>
           )}
           
-          {previewUrls.length > 0 ? (
+          {previewUrls.length > 0 && (
             <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
               <h4 className={`text-lg font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                 Fotot e pronës ({previewUrls.length})
@@ -1237,21 +1223,6 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
                   </div>
                 ))}
               </div>
-              
-              {bucketStatus === 'unavailable' && (
-                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-md text-sm">
-                  Vërejtje: Ngarkimi i fotove nuk është aktualisht i disponueshëm. Këto foto janë vetëm paraqitje dhe nuk do të ruhen me pronën tuaj.
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-              <h4 className={`text-lg font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                Nuk keni shtuar asnjë foto
-              </h4>
-              <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Pronat me foto kanë më shumë gjasa të marrin vëmendje. Mund të shtoni foto më vonë duke edituar pronën tuaj.
-              </p>
             </div>
           )}
           
@@ -1352,13 +1323,19 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
           <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
             <Check className="h-8 w-8 text-green-600" />
           </div>
-          <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>Prona u shtua me sukses!</h2>
-          <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
-            Prona juaj është shtuar dhe është në pritje për aprovim nga administratorët tanë.
+          <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+            Prona u shtua me sukses!
+          </h2>
+          <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-4`}>
+            Prona juaj tani është në pritje të aprovimit nga stafi ynë. Sapo të aprovohet, 
+            prona do të jetë në dispozicion për klientët potencialë për ta shikuar.
           </p>
-          <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-8`}>
-            Zakonisht, shqyrtimi zgjat 1-2 ditë pune. Do të njoftoheni kur prona juaj aprovohet.
-          </p>
+          <div className={`p-4 mb-8 rounded-lg ${
+            darkMode ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-700'
+          }`}>
+            <p>Procesi i aprovimit zakonisht zgjat 24-48 orë. Do të merrni një njoftim 
+            kur prona juaj aprovohet.</p>
+          </div>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button
               onClick={() => setSuccess(false)}
@@ -1385,7 +1362,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Ele
   return (
     <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6 animate-fadeIn`}>
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg flex items-start">
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg flex items-start">
           <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
           <p>{error}</p>
         </div>
