@@ -38,6 +38,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   
   const isOwner = authState.user && authState.user.id === property.owner_id;
   
+  // State for actual view and favorite counts
+  const [viewCount, setViewCount] = useState<number>(0);
+  const [favoriteCount, setFavoriteCount] = useState<number>(0);
+  
   // Load property images from database
   useEffect(() => {
     const loadImagesFromDatabase = async () => {
@@ -48,7 +52,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
             .from('properties')
             .select('images')
             .eq('id', property.id)
-            .single();
+            .maybeSingle();
             
           if (error) {
             console.error('Error fetching property images:', error);
@@ -67,6 +71,48 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     
     loadImagesFromDatabase();
   }, [property.id]);
+  
+  // Fetch the statistics (views and favorites) from the database
+  useEffect(() => {
+    if (!property.id || !isOwner) return;
+    
+    const fetchStatistics = async () => {
+      try {
+        // Fetch favorite count
+        const { count: favCount, error: favError } = await supabase
+          .from('favorites')
+          .select('*', { count: 'exact', head: true })
+          .eq('property_id', property.id);
+          
+        if (favError) {
+          console.error('Error fetching favorites count:', favError);
+        } else {
+          setFavoriteCount(favCount || 0);
+        }
+        
+        // Try to fetch view count if a property_views table exists
+        try {
+          const { count: viewsCount, error: viewsError } = await supabase
+            .from('property_views')
+            .select('*', { count: 'exact', head: true })
+            .eq('property_id', property.id);
+            
+          if (viewsError) {
+            console.error('Error fetching view count:', viewsError);
+          } else {
+            setViewCount(viewsCount || 0);
+          }
+        } catch (viewErr) {
+          console.log('Property views table might not exist:', viewErr);
+          // If the table doesn't exist, we'll keep the default value
+        }
+      } catch (err) {
+        console.error('Error fetching statistics:', err);
+      }
+    };
+    
+    fetchStatistics();
+  }, [property.id, isOwner]);
   
   // Clean up preview URLs when component unmounts
   useEffect(() => {
@@ -107,9 +153,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     ? { text: 'Me qira', bg: 'bg-blue-600' } 
     : { text: 'Në shitje', bg: 'bg-green-600' };
 
-  // Dummy-Statistiken (ersetzen durch echte Felder, falls vorhanden)
-  const views = property.views ?? 239;
-  const favorites = property.favorites ?? 5;
   const createdAt = property.created_at ? new Date(property.created_at) : new Date();
   const formattedDate = createdAt.toLocaleDateString('de-DE');
 
@@ -162,7 +205,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
             <div className="flex flex-col items-center py-1 px-2 rounded-md bg-blue-50 dark:bg-blue-900/30">
               <div className="flex items-center text-blue-700 dark:text-blue-300 mb-1">
                 <Eye className="h-4 w-4 mr-1" />
-                <span className="font-semibold">{views}</span>
+                <span className="font-semibold">{viewCount}</span>
               </div>
               <span className="text-[10px] text-blue-600/70 dark:text-blue-400/70">shikime</span>
             </div>
@@ -170,7 +213,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
             <div className="flex flex-col items-center py-1 px-2 rounded-md bg-pink-50 dark:bg-pink-900/30">
               <div className="flex items-center text-pink-700 dark:text-pink-300 mb-1">
                 <Heart className="h-4 w-4 mr-1" />
-                <span className="font-semibold">{favorites}</span>
+                <span className="font-semibold">{favoriteCount}</span>
               </div>
               <span className="text-[10px] text-pink-600/70 dark:text-pink-400/70">në favorite</span>
             </div>
