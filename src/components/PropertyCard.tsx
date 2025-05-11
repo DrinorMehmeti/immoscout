@@ -156,32 +156,34 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           </p>
         </div>
         
-        {/* Redesigned Statistics Bar */}
-        <div className="mt-3 mb-3 grid grid-cols-3 gap-2 border-y border-gray-100 dark:border-gray-700 py-2">
-          <div className="flex flex-col items-center py-1 px-2 rounded-md bg-blue-50 dark:bg-blue-900/30">
-            <div className="flex items-center text-blue-700 dark:text-blue-300 mb-1">
-              <Eye className="h-4 w-4 mr-1" />
-              <span className="font-semibold">{views}</span>
+        {/* Redesigned Statistics Bar - Only visible to property owner */}
+        {isOwner && (
+          <div className="mt-3 mb-3 grid grid-cols-3 gap-2 border-y border-gray-100 dark:border-gray-700 py-2">
+            <div className="flex flex-col items-center py-1 px-2 rounded-md bg-blue-50 dark:bg-blue-900/30">
+              <div className="flex items-center text-blue-700 dark:text-blue-300 mb-1">
+                <Eye className="h-4 w-4 mr-1" />
+                <span className="font-semibold">{views}</span>
+              </div>
+              <span className="text-[10px] text-blue-600/70 dark:text-blue-400/70">shikime</span>
             </div>
-            <span className="text-[10px] text-blue-600/70 dark:text-blue-400/70">shikime</span>
-          </div>
-          
-          <div className="flex flex-col items-center py-1 px-2 rounded-md bg-pink-50 dark:bg-pink-900/30">
-            <div className="flex items-center text-pink-700 dark:text-pink-300 mb-1">
-              <Heart className="h-4 w-4 mr-1" />
-              <span className="font-semibold">{favorites}</span>
+            
+            <div className="flex flex-col items-center py-1 px-2 rounded-md bg-pink-50 dark:bg-pink-900/30">
+              <div className="flex items-center text-pink-700 dark:text-pink-300 mb-1">
+                <Heart className="h-4 w-4 mr-1" />
+                <span className="font-semibold">{favorites}</span>
+              </div>
+              <span className="text-[10px] text-pink-600/70 dark:text-pink-400/70">në favorite</span>
             </div>
-            <span className="text-[10px] text-pink-600/70 dark:text-pink-400/70">në favorite</span>
-          </div>
-          
-          <div className="flex flex-col items-center py-1 px-2 rounded-md bg-gray-50 dark:bg-gray-800/60">
-            <div className="flex items-center text-gray-700 dark:text-gray-300 mb-1">
-              <Clock className="h-4 w-4 mr-1" />
-              <span className="font-semibold">{formattedDate}</span>
+            
+            <div className="flex flex-col items-center py-1 px-2 rounded-md bg-gray-50 dark:bg-gray-800/60">
+              <div className="flex items-center text-gray-700 dark:text-gray-300 mb-1">
+                <Clock className="h-4 w-4 mr-1" />
+                <span className="font-semibold">{formattedDate}</span>
+              </div>
+              <span className="text-[10px] text-gray-600/70 dark:text-gray-400/70">e postuar më</span>
             </div>
-            <span className="text-[10px] text-gray-600/70 dark:text-gray-400/70">e postuar më</span>
           </div>
-        </div>
+        )}
         
         <div className="flex items-center mt-1 text-gray-500 text-sm">
           <MapPin className="h-4 w-4 mr-1" />
