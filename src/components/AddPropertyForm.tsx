@@ -20,11 +20,17 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [location, setLocation] = useState('');
+  const [district, setDistrict] = useState(''); // New field for district/neighborhood
   const [propertyType, setPropertyType] = useState<'apartment' | 'house' | 'land' | 'commercial'>('apartment');
   const [listingType, setListingType] = useState<'rent' | 'sale'>('sale');
   const [rooms, setRooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
   const [area, setArea] = useState('');
+  const [floor, setFloor] = useState(''); // New field for floor number
+  const [totalFloors, setTotalFloors] = useState(''); // New field for total floors
+  const [yearBuilt, setYearBuilt] = useState(''); // New field for construction year
+  const [parkingSpots, setParkingSpots] = useState(''); // New field for parking spots
+  const [condition, setCondition] = useState<'new' | 'good' | 'renovated' | 'needs-renovation'>('good'); // New field for property condition
   const [features, setFeatures] = useState<string[]>([]);
   const [images, setImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -32,6 +38,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [bucketStatus, setBucketStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
   const [dragActive, setDragActive] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1); // For multi-step form
+  const totalSteps = 4;
 
   // Check if the bucket exists without trying to create it
   useEffect(() => {
@@ -100,7 +108,9 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   };
 
   const handleFiles = (files: FileList) => {
-    const fileArray = Array.from(files);
+    const fileArray = Array.from(files).filter(file => 
+      file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024
+    );
     
     // Limit to 10 images total
     const availableSlots = 10 - images.length;
@@ -132,6 +142,20 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     const newImages = [...images];
     newImages.splice(index, 1);
     setImages(newImages);
+  };
+
+  const nextStep = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,6 +201,13 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         }
       }
       
+      // Build extended features array with property condition and other details
+      const extendedFeatures = [...features];
+      
+      if (condition === 'new') extendedFeatures.push('Ndërtim i ri');
+      if (condition === 'renovated') extendedFeatures.push('Rinovuar');
+      if (parkingSpots && parseInt(parkingSpots) > 0) extendedFeatures.push(`${parkingSpots} vend parkimi`);
+      
       // Create new property entry in database
       const { error: insertError } = await supabase
         .from('properties')
@@ -191,7 +222,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           rooms: rooms ? parseInt(rooms, 10) : null,
           bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
           area: area ? parseFloat(area) : null,
-          features,
+          features: extendedFeatures,
           images: uploadedImageUrls.length > 0 ? uploadedImageUrls : [],
           status: 'active',
           featured: false
@@ -207,19 +238,29 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       setDescription('');
       setPrice('');
       setLocation('');
+      setDistrict('');
       setPropertyType('apartment');
       setListingType('sale');
       setRooms('');
       setBathrooms('');
       setArea('');
+      setFloor('');
+      setTotalFloors('');
+      setYearBuilt('');
+      setParkingSpots('');
+      setCondition('good');
       setFeatures([]);
       setImages([]);
       setPreviewUrls([]);
+      setCurrentStep(1);
       
       // Call success callback if provided
       if (onSuccess) {
         onSuccess();
       }
+      
+      // Scroll to top to show success message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       
     } catch (err) {
       if (err instanceof Error) {
@@ -227,6 +268,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       } else {
         setError('Ndodhi një gabim i papritur');
       }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setIsSubmitting(false);
     }
@@ -245,43 +287,25 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     'bg-gray-700 hover:bg-gray-600 text-white' : 
     'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300';
 
-  return (
-    <div className={`bg-gradient-to-b ${formBg} rounded-3xl shadow-2xl overflow-hidden transition-all duration-300`}>
-      <div className="p-8 sm:p-10">
-        {/* Form header */}
-        <div className="mb-8">
-          <h2 className={`text-3xl font-extrabold ${textColor} mb-2`}>
-            Shto një pronë të re
-          </h2>
-          <p className={textMuted}>
-            Plotësoni detajet e pronës tuaj për ta publikuar në platformën tonë
-          </p>
-        </div>
-        
-        {/* Alert messages */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-xl flex items-start animate-fadeIn">
-            <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-            <p>{error}</p>
-          </div>
-        )}
-        
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-xl flex items-start animate-fadeIn">
-            <Check className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Prona u shtua me sukses!</p>
-          </div>
-        )}
-        
-        {bucketStatus === 'unavailable' && (
-          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-xl flex items-start">
-            <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Vërejtje: Storage Bucket nuk është i disponueshëm. Fotot nuk do të mund të ngarkohen por ju mund të vazhdoni të shtoni pronën.</p>
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-8">
+  // Common properties for all form steps
+  const formProps = {
+    cardBg,
+    textColor,
+    textMuted,
+    inputBg,
+    inputBorder,
+    inputFocus,
+    buttonPrimary,
+    buttonSecondary,
+    darkMode
+  };
+
+  // Multi-step form content
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-8 animate-fadeIn">
             {/* Listing type */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-2xl">
               <label className={`block text-sm font-medium ${textColor} mb-3`}>
@@ -405,7 +429,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               <div className="space-y-4">
                 <div>
                   <label htmlFor="title" className={`block text-sm font-medium ${textColor} mb-1`}>
-                    Titulli i pronës
+                    Titulli i pronës*
                   </label>
                   <input
                     type="text"
@@ -421,7 +445,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="price" className={`block text-sm font-medium ${textColor} mb-1`}>
-                      Çmimi ({listingType === 'rent' ? 'mujor' : 'total'})
+                      Çmimi ({listingType === 'rent' ? 'mujor' : 'total'})*
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -441,29 +465,26 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   </div>
                   
                   <div>
-                    <label htmlFor="location" className={`block text-sm font-medium ${textColor} mb-1`}>
-                      Lokacioni
+                    <label htmlFor="condition" className={`block text-sm font-medium ${textColor} mb-1`}>
+                      Gjendja e pronës
                     </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <MapPin className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                      </div>
-                      <input
-                        type="text"
-                        id="location"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        required
-                        className={`w-full pl-11 pr-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
-                        placeholder="p.sh. Prishtinë, Bregu i Diellit"
-                      />
-                    </div>
+                    <select
+                      id="condition"
+                      value={condition}
+                      onChange={(e) => setCondition(e.target.value as any)}
+                      className={`w-full px-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
+                    >
+                      <option value="new">E re (ndërtim i ri)</option>
+                      <option value="good">E mirë</option>
+                      <option value="renovated">E rinovuar</option>
+                      <option value="needs-renovation">Nevojitet rinovim</option>
+                    </select>
                   </div>
                 </div>
                 
                 <div>
                   <label htmlFor="description" className={`block text-sm font-medium ${textColor} mb-1`}>
-                    Përshkrimi
+                    Përshkrimi*
                   </label>
                   <textarea
                     id="description"
@@ -477,6 +498,55 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                 </div>
               </div>
             </div>
+          </div>
+        );
+      
+      case 2:
+        return (
+          <div className="space-y-8 animate-fadeIn">
+            {/* Location */}
+            <div className={`${cardBg} p-6 rounded-2xl shadow-sm`}>
+              <h3 className={`text-lg font-semibold ${textColor} mb-4 flex items-center`}>
+                <MapPin className="h-5 w-5 mr-2 text-blue-500" />
+                Lokacioni
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="location" className={`block text-sm font-medium ${textColor} mb-1`}>
+                    Qyteti/Komuna*
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <MapPin className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                    </div>
+                    <input
+                      type="text"
+                      id="location"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      required
+                      className={`w-full pl-11 pr-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
+                      placeholder="p.sh. Prishtinë"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="district" className={`block text-sm font-medium ${textColor} mb-1`}>
+                    Lagjja/Zona
+                  </label>
+                  <input
+                    type="text"
+                    id="district"
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    className={`w-full px-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
+                    placeholder="p.sh. Dardania, Ulpiana, Bregu i Diellit"
+                  />
+                </div>
+              </div>
+            </div>
             
             {/* Property details */}
             <div className={`${cardBg} p-6 rounded-2xl shadow-sm`}>
@@ -486,22 +556,45 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               </h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="area" className={`block text-sm font-medium ${textColor} mb-1`}>
+                    <div className="flex items-center">
+                      <Square className="h-4 w-4 mr-2 text-blue-500" />
+                      <span>Sipërfaqja (m²)*</span>
+                    </div>
+                  </label>
+                  <input
+                    type="number"
+                    id="area"
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    required
+                    min="0"
+                    className={`w-full px-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
+                    placeholder="p.sh. 85"
+                  />
+                </div>
+                
                 {(propertyType === 'apartment' || propertyType === 'house') && (
                   <div>
                     <label htmlFor="rooms" className={`block text-sm font-medium ${textColor} mb-1`}>
                       <div className="flex items-center">
                         <BedDouble className="h-4 w-4 mr-2 text-blue-500" />
-                        <span>Numri i dhomave</span>
+                        <span>Numri i dhomave*</span>
                       </div>
                     </label>
-                    <input
-                      type="number"
+                    <select
                       id="rooms"
                       value={rooms}
                       onChange={(e) => setRooms(e.target.value)}
-                      min="0"
+                      required
                       className={`w-full px-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
-                    />
+                    >
+                      <option value="">Zgjidhni</option>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                        <option key={num} value={num}>{num}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
                 
@@ -510,44 +603,127 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                     <label htmlFor="bathrooms" className={`block text-sm font-medium ${textColor} mb-1`}>
                       <div className="flex items-center">
                         <Bath className="h-4 w-4 mr-2 text-blue-500" />
-                        <span>Numri i banjove</span>
+                        <span>Numri i banjove*</span>
+                      </div>
+                    </label>
+                    <select
+                      id="bathrooms"
+                      value={bathrooms}
+                      onChange={(e) => setBathrooms(e.target.value)}
+                      required
+                      className={`w-full px-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
+                    >
+                      <option value="">Zgjidhni</option>
+                      {[1, 2, 3, 4, 5].map(num => (
+                        <option key={num} value={num}>{num}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
+                {propertyType === 'apartment' && (
+                  <div>
+                    <label htmlFor="floor" className={`block text-sm font-medium ${textColor} mb-1`}>
+                      <div className="flex items-center">
+                        <Building className="h-4 w-4 mr-2 text-blue-500" />
+                        <span>Kati</span>
                       </div>
                     </label>
                     <input
                       type="number"
-                      id="bathrooms"
-                      value={bathrooms}
-                      onChange={(e) => setBathrooms(e.target.value)}
+                      id="floor"
+                      value={floor}
+                      onChange={(e) => setFloor(e.target.value)}
                       min="0"
                       className={`w-full px-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
+                      placeholder="p.sh. 3"
                     />
                   </div>
                 )}
                 
-                <div>
-                  <label htmlFor="area" className={`block text-sm font-medium ${textColor} mb-1`}>
-                    <div className="flex items-center">
-                      <Square className="h-4 w-4 mr-2 text-blue-500" />
-                      <span>Sipërfaqja (m²)</span>
-                    </div>
-                  </label>
-                  <input
-                    type="number"
-                    id="area"
-                    value={area}
-                    onChange={(e) => setArea(e.target.value)}
-                    min="0"
-                    className={`w-full px-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
-                  />
-                </div>
+                {propertyType === 'apartment' && (
+                  <div>
+                    <label htmlFor="totalFloors" className={`block text-sm font-medium ${textColor} mb-1`}>
+                      <div className="flex items-center">
+                        <Building className="h-4 w-4 mr-2 text-blue-500" />
+                        <span>Numri total i kateve</span>
+                      </div>
+                    </label>
+                    <input
+                      type="number"
+                      id="totalFloors"
+                      value={totalFloors}
+                      onChange={(e) => setTotalFloors(e.target.value)}
+                      min="0"
+                      className={`w-full px-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
+                      placeholder="p.sh. 8"
+                    />
+                  </div>
+                )}
+                
+                {(propertyType === 'apartment' || propertyType === 'house') && (
+                  <div>
+                    <label htmlFor="yearBuilt" className={`block text-sm font-medium ${textColor} mb-1`}>
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2 text-blue-500" />
+                        <span>Viti i ndërtimit</span>
+                      </div>
+                    </label>
+                    <input
+                      type="number"
+                      id="yearBuilt"
+                      value={yearBuilt}
+                      onChange={(e) => setYearBuilt(e.target.value)}
+                      min="1900"
+                      max={new Date().getFullYear()}
+                      className={`w-full px-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
+                      placeholder="p.sh. 2020"
+                    />
+                  </div>
+                )}
+                
+                {(propertyType === 'apartment' || propertyType === 'house') && (
+                  <div>
+                    <label htmlFor="parkingSpots" className={`block text-sm font-medium ${textColor} mb-1`}>
+                      <div className="flex items-center">
+                        <span className="mr-2 text-blue-500">🅿️</span>
+                        <span>Vende parkimi</span>
+                      </div>
+                    </label>
+                    <select
+                      id="parkingSpots"
+                      value={parkingSpots}
+                      onChange={(e) => setParkingSpots(e.target.value)}
+                      className={`w-full px-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
+                    >
+                      <option value="">Zgjidhni</option>
+                      {[0, 1, 2, 3, 4, 5].map(num => (
+                        <option key={num} value={num}>{num}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
+              
+              {area && price && (
+                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                  <p className={`text-blue-700 dark:text-blue-300 font-medium`}>
+                    Çmimi për m²: {(parseFloat(price) / parseFloat(area)).toFixed(2)}€/m²
+                  </p>
+                </div>
+              )}
             </div>
-            
+          </div>
+        );
+      
+      case 3:
+        return (
+          <div className="space-y-8 animate-fadeIn">
             {/* Features */}
             <div className={`${cardBg} p-6 rounded-2xl shadow-sm`}>
               <h3 className={`text-lg font-semibold ${textColor} mb-4 flex items-center`}>
                 <Tag className="h-5 w-5 mr-2 text-blue-500" />
-                Karakteristikat
+                Karakteristikat dhe veçoritë
               </h3>
               
               <div className="space-y-4">
@@ -601,30 +777,42 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   </button>
                 </div>
                 
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {['Parking', 'Ballkon', 'Ngrohje qendrore', 'Ashensor', 'Mobiluar', 'Internet'].map((suggestion) => (
-                    !features.includes(suggestion) && (
-                      <button
-                        key={suggestion}
-                        type="button"
-                        onClick={() => setFeatures([...features, suggestion])}
-                        className={`
-                          px-3 py-1.5 rounded-full text-sm
-                          ${darkMode 
-                            ? 'bg-gray-800 text-gray-300 border border-gray-700 hover:border-gray-600' 
-                            : 'bg-gray-100 text-gray-700 border border-gray-200 hover:border-gray-300'
-                          }
-                          transition-all
-                        `}
-                      >
-                        + {suggestion}
-                      </button>
-                    )
-                  ))}
+                <div>
+                  <h4 className={`text-sm font-medium ${textColor} mb-2`}>Karakteristikat e zakonshme:</h4>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {[
+                      'Parking', 'Ballkon', 'Terrasë', 'Ashensor', 'Pamje', 'Mobiluar', 'Internet',
+                      'Ngrohje qendrore', 'Klima', 'Siguri', 'Bodrum', 'Kabinat kabllore TV',
+                      'Hidrofor', 'Izolim termo', 'Kopsht', 'Panel diellor'
+                    ].map((suggestion) => (
+                      !features.includes(suggestion) && (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => setFeatures([...features, suggestion])}
+                          className={`
+                            px-3 py-1.5 rounded-full text-sm
+                            ${darkMode 
+                              ? 'bg-gray-800 text-gray-300 border border-gray-700 hover:border-gray-600' 
+                              : 'bg-gray-100 text-gray-700 border border-gray-200 hover:border-gray-300'
+                            }
+                            transition-all
+                          `}
+                        >
+                          + {suggestion}
+                        </button>
+                      )
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-            
+          </div>
+        );
+        
+      case 4:
+        return (
+          <div className="space-y-8 animate-fadeIn">
             {/* Images */}
             <div className={`${cardBg} p-6 rounded-2xl shadow-sm`}>
               <h3 className={`text-lg font-semibold ${textColor} mb-4 flex items-center`}>
@@ -693,6 +881,11 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                           >
                             <X className="h-4 w-4 text-red-500" />
                           </button>
+                          {index === 0 && (
+                            <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-md">
+                              Kryesore
+                            </div>
+                          )}
                         </div>
                       ))}
                       
@@ -753,21 +946,170 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               )}
             </div>
             
-            {/* Submit section */}
-            <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
+            {/* Summary */}
+            <div className={`${cardBg} p-6 rounded-2xl shadow-sm`}>
+              <h3 className={`text-lg font-semibold ${textColor} mb-4 flex items-center`}>
+                <Info className="h-5 w-5 mr-2 text-blue-500" />
+                Përmbledhje
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className={textMuted}>Lloji i shpalljes:</span>
+                  <span className={`font-medium ${textColor}`}>
+                    {listingType === 'sale' ? 'Në shitje' : 'Me qira'}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className={textMuted}>Lloji i pronës:</span>
+                  <span className={`font-medium ${textColor}`}>
+                    {propertyType === 'apartment' && 'Banesë'}
+                    {propertyType === 'house' && 'Shtëpi'}
+                    {propertyType === 'land' && 'Tokë'}
+                    {propertyType === 'commercial' && 'Lokal'}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className={textMuted}>Çmimi:</span>
+                  <span className={`font-medium text-blue-600 dark:text-blue-400`}>
+                    {price}€ {listingType === 'rent' ? '/muaj' : ''}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className={textMuted}>Lokacioni:</span>
+                  <span className={`font-medium ${textColor}`}>{location}</span>
+                </div>
+                
+                {area && (
+                  <div className="flex justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
+                    <span className={textMuted}>Sipërfaqja:</span>
+                    <span className={`font-medium ${textColor}`}>{area} m²</span>
+                  </div>
+                )}
+                
+                {rooms && (
+                  <div className="flex justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
+                    <span className={textMuted}>Dhoma:</span>
+                    <span className={`font-medium ${textColor}`}>{rooms}</span>
+                  </div>
+                )}
+                
+                {bathrooms && (
+                  <div className="flex justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
+                    <span className={textMuted}>Banjo:</span>
+                    <span className={`font-medium ${textColor}`}>{bathrooms}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between pb-2 border-b border-gray-200 dark:border-gray-700">
+                  <span className={textMuted}>Foto:</span>
+                  <span className={`font-medium ${textColor}`}>{previewUrls.length} nga 10</span>
+                </div>
+                
+                <div className="flex justify-between pb-2">
+                  <span className={textMuted}>Karakteristika:</span>
+                  <span className={`font-medium ${textColor}`}>{features.length}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className={`bg-gradient-to-b ${formBg} rounded-3xl shadow-2xl overflow-hidden transition-all duration-300`}>
+      <div className="p-8 sm:p-10">
+        {/* Form header */}
+        <div className="mb-8">
+          <h2 className={`text-3xl font-extrabold ${textColor} mb-2`}>
+            Shto një pronë të re
+          </h2>
+          <p className={textMuted}>
+            Plotësoni detajet e pronës tuaj për ta publikuar në platformën tonë
+          </p>
+        </div>
+        
+        {/* Progress indicator */}
+        <div className="mb-8">
+          <div className="flex justify-between mb-2">
+            <span className={`text-sm font-medium ${textColor}`}>
+              Hapi {currentStep} nga {totalSteps}
+            </span>
+            <span className={`text-sm ${textMuted}`}>
+              {currentStep === 1 && 'Informacioni bazë'}
+              {currentStep === 2 && 'Lokacioni dhe detajet'}
+              {currentStep === 3 && 'Karakteristikat'}
+              {currentStep === 4 && 'Fotot dhe përmbledhja'}
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-4">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-300" 
+              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+        
+        {/* Alert messages */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-xl flex items-start animate-fadeIn">
+            <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <p>{error}</p>
+          </div>
+        )}
+        
+        {success && (
+          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-xl flex items-start animate-fadeIn">
+            <Check className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <p>Prona u shtua me sukses!</p>
+          </div>
+        )}
+        
+        {bucketStatus === 'unavailable' && (
+          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-xl flex items-start">
+            <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <p>Vërejtje: Storage Bucket nuk është i disponueshëm. Fotot nuk do të mund të ngarkohen por ju mund të vazhdoni të shtoni pronën.</p>
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit}>
+          {/* Form content based on current step */}
+          {renderStepContent()}
+          
+          {/* Navigation buttons */}
+          <div className="flex flex-col sm:flex-row justify-between gap-4 pt-8 border-t border-gray-200 dark:border-gray-700 mt-8">
+            {currentStep > 1 ? (
               <button
                 type="button"
-                className={`${buttonSecondary} py-3 px-6 rounded-xl font-medium transition-all hover:shadow-md sm:order-1`}
+                onClick={prevStep}
+                className={`${buttonSecondary} py-3 px-6 rounded-xl font-medium transition-all hover:shadow-md flex items-center justify-center`}
               >
-                Anulo
+                <ArrowRight className="h-5 w-5 mr-2 rotate-180" />
+                Kthehu
               </button>
-              
+            ) : (
+              <div></div> // Empty div to maintain flex spacing
+            )}
+            
+            {currentStep < totalSteps ? (
+              <button
+                type="button"
+                onClick={nextStep}
+                className={`${buttonPrimary} py-3 px-8 rounded-xl font-medium transition-all hover:shadow-lg flex items-center justify-center`}
+              >
+                Vazhdo
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </button>
+            ) : (
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className={`
-                  ${buttonPrimary} py-3 px-8 rounded-xl font-medium sm:order-2
-                  transition-all hover:shadow-lg flex items-center justify-center
+                  ${buttonPrimary} py-3 px-8 rounded-xl font-medium transition-all hover:shadow-lg flex items-center justify-center
                   ${isSubmitting ? 'opacity-80' : ''}
                 `}
               >
@@ -777,16 +1119,16 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Duke u dërguar...
+                    Duke publikuar...
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-5 w-5 mr-2" />
-                    Shto pronën
+                    Publiko pronën
                   </>
                 )}
               </button>
-            </div>
+            )}
           </div>
         </form>
       </div>
