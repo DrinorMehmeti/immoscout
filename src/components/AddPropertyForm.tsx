@@ -23,11 +23,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-<<<<<<< HEAD
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
-=======
   const [currentStep, setCurrentStep] = useState(STEPS.BASIC_INFO);
->>>>>>> d9f104a80ecc7e09480ac103ff401f8140ba0ad8
   
   // Form fields
   const [title, setTitle] = useState('');
@@ -201,14 +198,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       if (images.length > 0 && bucketStatus === 'available') {
         const bucketName = 'property-images';
         
-<<<<<<< HEAD
-        if (!bucketExists) {
-          uploadErrorList.push('Storage bucket nuk ekziston. Fotot nuk do të ngarkohen.');
-        } else {
-          // Upload images only if the bucket exists
-=======
         try {
->>>>>>> d9f104a80ecc7e09480ac103ff401f8140ba0ad8
           for (const image of images) {
             const fileExt = image.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
@@ -219,13 +209,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               .upload(filePath, image);
               
             if (uploadError) {
-<<<<<<< HEAD
               uploadErrorList.push(`Gabim gjatë ngarkimit të fotos: ${image.name} (${uploadError.message})`);
               continue;
-=======
-              console.error('Error uploading image:', uploadError);
-              continue; // Skip this image but continue with others
->>>>>>> d9f104a80ecc7e09480ac103ff401f8140ba0ad8
             }
             
             const { data: { publicUrl } } = supabase.storage
@@ -301,25 +286,6 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     }
   };
 
-<<<<<<< HEAD
-  return (
-    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
-      <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-6`}>Shtoni një pronë të re</h2>
-      
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg flex items-start">
-          <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-          <div>
-            <p>{error}</p>
-            {uploadErrors.length > 0 && (
-              <ul className="mt-2 list-disc list-inside text-xs">
-                {uploadErrors.map((err, idx) => (
-                  <li key={idx}>{err}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-=======
   const renderStepIndicator = () => {
     return (
       <div className="mb-6">
@@ -354,7 +320,6 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               </span>
             </div>
           ))}
->>>>>>> d9f104a80ecc7e09480ac103ff401f8140ba0ad8
         </div>
         <div className="relative flex items-center justify-between mt-2">
           <div className="absolute left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 top-1/2 transform -translate-y-1/2 z-0"></div>
