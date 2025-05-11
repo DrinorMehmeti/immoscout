@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 import { Property } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import PropertyMap from '../components/PropertyMap';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
