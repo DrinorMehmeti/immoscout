@@ -175,6 +175,16 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       if (!authState.isAuthenticated || !authState.user) {
         throw new Error('Ju duhet të jeni të kyçur për të shtuar pronë');
       }
+
+      // Validate price
+      if (!price || price.trim() === '') {
+        throw new Error('Çmimi është i detyruar. Ju lutemi vendosni një vlerë.');
+      }
+
+      const priceValue = parseFloat(price);
+      if (isNaN(priceValue) || priceValue <= 0) {
+        throw new Error('Ju lutemi vendosni një çmim të vlefshëm më të madh se 0.');
+      }
       
       // Upload images to Supabase Storage
       const uploadedImageUrls: string[] = [];
@@ -223,7 +233,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           owner_id: authState.user.id,
           title,
           description,
-          price: parseFloat(price),
+          price: priceValue, // Use validated price value
           location,
           type: propertyType,
           listing_type: listingType,
@@ -467,11 +477,15 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
                         required
-                        min="0"
+                        min="1"
+                        step="any"
                         className={`w-full pl-11 pr-4 py-3 rounded-xl shadow-sm ${inputBg} ${inputBorder} ${inputFocus} ${textColor}`}
                         placeholder="0"
                       />
                     </div>
+                    <small className={`mt-1 block ${textMuted}`}>
+                      Çmimi është i detyruar dhe duhet të jetë më i madh se 0.
+                    </small>
                   </div>
                   
                   <div>
