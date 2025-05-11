@@ -10,7 +10,7 @@ const Dashboard: React.FC = () => {
   const { darkMode } = useTheme();
   // Filter properties owned by the logged in user
   const userProperties = mockProperties.filter(
-    property => property.userId === authState.user?.id
+    property => property.owner_id === authState.user?.id
   );
 
   return (

@@ -15,33 +15,51 @@ const STEPS = {
   FEATURES: 2,
   IMAGES: 3,
   REVIEW: 4
-};
+} as const;
 
-const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
+type StepKey = keyof typeof STEPS;
+type StepValue = typeof STEPS[StepKey];
+
+interface FormData {
+  title: string;
+  description: string;
+  price: string;
+  location: string;
+  propertyType: string;
+  status: string;
+  bedrooms: string;
+  bathrooms: string;
+  area: string;
+  features: string[];
+  images: File[];
+}
+
+const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }): JSX.Element => {
   const { authState } = useAuth();
   const { darkMode } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
-  const [currentStep, setCurrentStep] = useState(STEPS.BASIC_INFO);
-  
-  // Form fields
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [location, setLocation] = useState('');
-  const [propertyType, setPropertyType] = useState<'apartment' | 'house' | 'land' | 'commercial'>('apartment');
-  const [listingType, setListingType] = useState<'rent' | 'sale'>('sale');
-  const [rooms, setRooms] = useState('');
-  const [bathrooms, setBathrooms] = useState('');
-  const [area, setArea] = useState('');
-  const [features, setFeatures] = useState<string[]>([]);
-  const [images, setImages] = useState<File[]>([]);
-  const [featureInput, setFeatureInput] = useState('');
+  const [currentStep, setCurrentStep] = useState<StepValue>(STEPS.BASIC_INFO);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [bucketStatus, setBucketStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
+  const [featureInput, setFeatureInput] = useState('');
   
+  // Form data state
+  const [formData, setFormData] = useState<FormData>({
+    title: '',
+    description: '',
+    price: '',
+    location: '',
+    propertyType: 'apartment',
+    status: 'for-sale',
+    bedrooms: '',
+    bathrooms: '',
+    area: '',
+    features: [],
+    images: []
+  });
+
   // Additional details fields
   const [buildingYear, setBuildingYear] = useState('');
   const [floor, setFloor] = useState('');
@@ -52,12 +70,12 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const [condition, setCondition] = useState<'new' | 'good' | 'needs-renovation'>('good');
 
   // Step validation state
-  const [stepValidation, setStepValidation] = useState({
-    0: false, // BASIC_INFO
-    1: true,  // DETAILS (optional fields)
-    2: true,  // FEATURES (optional)
-    3: true,  // IMAGES (optional)
-    4: true   // REVIEW (always valid if previous steps are valid)
+  const [stepValidation, setStepValidation] = useState<Record<StepValue, boolean>>({
+    [STEPS.BASIC_INFO]: false,
+    [STEPS.DETAILS]: true,
+    [STEPS.FEATURES]: true,
+    [STEPS.IMAGES]: true,
+    [STEPS.REVIEW]: true
   });
 
   // Check if the bucket exists without trying to create it
@@ -65,7 +83,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     const checkBucketAvailability = async () => {
       try {
         // Check if we can access the property-images bucket
-        const { data: files, error: listError } = await supabase.storage
+        const { error: listError } = await supabase.storage
           .from('property-images')
           .list();
           
@@ -95,31 +113,56 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     };
   }, [previewUrls]);
 
-  // Validate basic info step
-  useEffect(() => {
-    // Basic validation for required fields
-    const isStepValid = 
-      title.trim() !== '' && 
-      description.trim() !== '' && 
-      price.trim() !== '' && 
-      parseFloat(price) > 0 && 
-      location.trim() !== '';
-    
+  // Update step validation
+  const updateStepValidation = (step: StepValue, isValid: boolean) => {
     setStepValidation(prev => ({
       ...prev,
-      [STEPS.BASIC_INFO]: isStepValid
+      [step]: isValid
     }));
-  }, [title, description, price, location]);
+  };
+
+  // In the useEffect for step validation
+  useEffect(() => {
+    const validateCurrentStep = () => {
+      switch (currentStep) {
+        case STEPS.BASIC_INFO:
+          updateStepValidation(STEPS.BASIC_INFO, 
+            Boolean(formData.title && formData.description && formData.price && formData.location)
+          );
+          break;
+        case STEPS.DETAILS:
+          updateStepValidation(STEPS.DETAILS, true);
+          break;
+        case STEPS.FEATURES:
+          updateStepValidation(STEPS.FEATURES, true);
+          break;
+        case STEPS.IMAGES:
+          updateStepValidation(STEPS.IMAGES, true);
+          break;
+        case STEPS.REVIEW:
+          updateStepValidation(STEPS.REVIEW, true);
+          break;
+      }
+    };
+
+    validateCurrentStep();
+  }, [currentStep, formData.title, formData.description, formData.price, formData.location]);
 
   const handleAddFeature = () => {
-    if (featureInput.trim() !== '' && !features.includes(featureInput.trim())) {
-      setFeatures([...features, featureInput.trim()]);
+    if (featureInput.trim() !== '' && !formData.features.includes(featureInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        features: [...prev.features, featureInput.trim()]
+      }));
       setFeatureInput('');
     }
   };
 
   const handleRemoveFeature = (feature: string) => {
-    setFeatures(features.filter(f => f !== feature));
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.filter(f => f !== feature)
+    }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,11 +170,14 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       const fileArray = Array.from(e.target.files);
       
       // Limit to 10 images total
-      const availableSlots = 10 - images.length;
+      const availableSlots = 10 - formData.images.length;
       const newFiles = fileArray.slice(0, availableSlots);
       
       if (newFiles.length > 0) {
-        setImages([...images, ...newFiles]);
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, ...newFiles]
+        }));
         
         // Create preview URLs
         const newPreviewUrls = newFiles.map(file => URL.createObjectURL(file));
@@ -148,15 +194,18 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     newPreviewUrls.splice(index, 1);
     setPreviewUrls(newPreviewUrls);
     
-    const newImages = [...images];
+    const newImages = [...formData.images];
     newImages.splice(index, 1);
-    setImages(newImages);
+    setFormData(prev => ({
+      ...prev,
+      images: newImages
+    }));
   };
 
   // Go to next step if current step is valid
   const nextStep = () => {
     if (currentStep < STEPS.REVIEW && stepValidation[currentStep]) {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep((currentStep + 1) as StepValue);
       window.scrollTo(0, 0);
     }
   };
@@ -164,7 +213,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   // Go to previous step
   const prevStep = () => {
     if (currentStep > STEPS.BASIC_INFO) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep((currentStep - 1) as StepValue);
       window.scrollTo(0, 0);
     }
   };
@@ -174,7 +223,6 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
-    setUploadErrors([]);
     
     try {
       if (!authState.isAuthenticated || !authState.user) {
@@ -182,35 +230,34 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       }
       
       // Validate price
-      if (!price || price.trim() === '') {
+      if (!formData.price || formData.price.trim() === '') {
         throw new Error('Çmimi është i detyruar. Ju lutemi vendosni një vlerë.');
       }
 
-      const priceValue = parseFloat(price);
+      const priceValue = parseFloat(formData.price);
       if (isNaN(priceValue) || priceValue <= 0) {
         throw new Error('Ju lutemi vendosni një çmim të vlefshëm më të madh se 0.');
       }
       
       // Upload images to Supabase Storage
       const uploadedImageUrls: string[] = [];
-      const uploadErrorList: string[] = [];
       
-      if (images.length > 0 && bucketStatus === 'available') {
+      if (formData.images.length > 0 && bucketStatus === 'available') {
         const bucketName = 'property-images';
         
         try {
-          for (const image of images) {
+          for (const image of formData.images) {
             const fileExt = image.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
             const filePath = `properties/${authState.user.id}/${fileName}`;
             
-            const { error: uploadError, data } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
               .from(bucketName)
               .upload(filePath, image);
               
             if (uploadError) {
-              uploadErrorList.push(`Gabim gjatë ngarkimit të fotos: ${image.name} (${uploadError.message})`);
-              continue;
+              console.error('Error in upload process:', uploadError);
+              // Continue without images
             }
             
             const { data: { publicUrl } } = supabase.storage
@@ -230,43 +277,40 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         .from('properties')
         .insert({
           owner_id: authState.user.id,
-          title,
-          description,
+          title: formData.title,
+          description: formData.description,
           price: priceValue,
-          location,
-          type: propertyType,
-          listing_type: listingType,
-          rooms: rooms ? parseInt(rooms, 10) : null,
-          bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
-          area: area ? parseFloat(area) : null,
-          features,
+          location: formData.location,
+          type: formData.propertyType,
+          listing_type: formData.status,
+          rooms: formData.bedrooms ? parseInt(formData.bedrooms, 10) : null,
+          bathrooms: formData.bathrooms ? parseInt(formData.bathrooms, 10) : null,
+          area: formData.area ? parseFloat(formData.area) : null,
+          features: formData.features,
           images: uploadedImageUrls.length > 0 ? uploadedImageUrls : [],
           status: 'active',
           featured: false
         });
         
       if (insertError) {
-        uploadErrorList.push('Gabim gjatë ruajtjes së të dhënave: ' + insertError.message);
-      }
-      
-      setUploadErrors(uploadErrorList);
-      if (uploadErrorList.length > 0) {
-        throw new Error('Disa gabime ndodhën gjatë ngarkimit. Shiko detajet më poshtë.');
+        throw new Error('Gabim gjatë ruajtjes së të dhënave: ' + insertError.message);
       }
       
       setSuccess(true);
       // Reset form
-      setTitle('');
-      setDescription('');
-      setPrice('');
-      setLocation('');
-      setPropertyType('apartment');
-      setListingType('sale');
-      setRooms('');
-      setBathrooms('');
-      setArea('');
-      setFeatures([]);
-      setImages([]);
+      setFormData({
+        title: '',
+        description: '',
+        price: '',
+        location: '',
+        propertyType: 'apartment',
+        status: 'for-sale',
+        bedrooms: '',
+        bathrooms: '',
+        area: '',
+        features: [],
+        images: []
+      });
       setPreviewUrls([]);
       setCurrentStep(STEPS.BASIC_INFO);
       
@@ -355,28 +399,28 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               Lloji i shpalljes
             </label>
             <div className="flex space-x-4">
-              <label className={`flex items-center px-4 py-2 rounded-lg border ${listingType === 'sale' 
+              <label className={`flex items-center px-4 py-2 rounded-lg border ${formData.status === 'for-sale' 
                 ? darkMode ? 'bg-blue-900 border-blue-700 text-blue-300' : 'bg-blue-50 border-blue-500 text-blue-700' 
                 : darkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-700'}`}>
                 <input
                   type="radio"
                   name="listingType"
-                  value="sale"
-                  checked={listingType === 'sale'}
-                  onChange={() => setListingType('sale')}
+                  value="for-sale"
+                  checked={formData.status === 'for-sale'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: 'for-sale' }))}
                   className="sr-only"
                 />
                 <span>Në shitje</span>
               </label>
-              <label className={`flex items-center px-4 py-2 rounded-lg border ${listingType === 'rent' 
+              <label className={`flex items-center px-4 py-2 rounded-lg border ${formData.status === 'for-rent' 
                 ? darkMode ? 'bg-blue-900 border-blue-700 text-blue-300' : 'bg-blue-50 border-blue-500 text-blue-700' 
                 : darkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-700'}`}>
                 <input
                   type="radio"
                   name="listingType"
-                  value="rent"
-                  checked={listingType === 'rent'}
-                  onChange={() => setListingType('rent')}
+                  value="for-rent"
+                  checked={formData.status === 'for-rent'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: 'for-rent' }))}
                   className="sr-only"
                 />
                 <span>Me qira</span>
@@ -389,54 +433,54 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               Lloji i pronës
             </label>
             <div className="flex flex-wrap gap-3">
-              <label className={`flex items-center px-4 py-2 rounded-lg border ${propertyType === 'apartment' 
+              <label className={`flex items-center px-4 py-2 rounded-lg border ${formData.propertyType === 'apartment' 
                 ? darkMode ? 'bg-blue-900 border-blue-700 text-blue-300' : 'bg-blue-50 border-blue-500 text-blue-700' 
                 : darkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-700'}`}>
                 <input
                   type="radio"
                   name="propertyType"
                   value="apartment"
-                  checked={propertyType === 'apartment'}
-                  onChange={() => setPropertyType('apartment')}
+                  checked={formData.propertyType === 'apartment'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, propertyType: 'apartment' }))}
                   className="sr-only"
                 />
                 <span>Banesë</span>
               </label>
-              <label className={`flex items-center px-4 py-2 rounded-lg border ${propertyType === 'house' 
+              <label className={`flex items-center px-4 py-2 rounded-lg border ${formData.propertyType === 'house' 
                 ? darkMode ? 'bg-blue-900 border-blue-700 text-blue-300' : 'bg-blue-50 border-blue-500 text-blue-700' 
                 : darkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-700'}`}>
                 <input
                   type="radio"
                   name="propertyType"
                   value="house"
-                  checked={propertyType === 'house'}
-                  onChange={() => setPropertyType('house')}
+                  checked={formData.propertyType === 'house'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, propertyType: 'house' }))}
                   className="sr-only"
                 />
                 <span>Shtëpi</span>
               </label>
-              <label className={`flex items-center px-4 py-2 rounded-lg border ${propertyType === 'land' 
+              <label className={`flex items-center px-4 py-2 rounded-lg border ${formData.propertyType === 'land' 
                 ? darkMode ? 'bg-blue-900 border-blue-700 text-blue-300' : 'bg-blue-50 border-blue-500 text-blue-700' 
                 : darkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-700'}`}>
                 <input
                   type="radio"
                   name="propertyType"
                   value="land"
-                  checked={propertyType === 'land'}
-                  onChange={() => setPropertyType('land')}
+                  checked={formData.propertyType === 'land'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, propertyType: 'land' }))}
                   className="sr-only"
                 />
                 <span>Tokë</span>
               </label>
-              <label className={`flex items-center px-4 py-2 rounded-lg border ${propertyType === 'commercial' 
+              <label className={`flex items-center px-4 py-2 rounded-lg border ${formData.propertyType === 'commercial' 
                 ? darkMode ? 'bg-blue-900 border-blue-700 text-blue-300' : 'bg-blue-50 border-blue-500 text-blue-700' 
                 : darkMode ? 'border-gray-700 text-gray-300' : 'border-gray-300 text-gray-700'}`}>
                 <input
                   type="radio"
                   name="propertyType"
                   value="commercial"
-                  checked={propertyType === 'commercial'}
-                  onChange={() => setPropertyType('commercial')}
+                  checked={formData.propertyType === 'commercial'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, propertyType: 'commercial' }))}
                   className="sr-only"
                 />
                 <span>Lokal</span>
@@ -451,8 +495,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
             <input
               type="text"
               id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               required
               className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
                 darkMode 
@@ -469,8 +513,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
             </label>
             <textarea
               id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               required
               rows={5}
               className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
@@ -485,7 +529,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="price" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Çmimi ({listingType === 'rent' ? 'mujor' : 'total'})
+                Çmimi ({formData.status === 'for-rent' ? 'mujor' : 'total'})
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -494,8 +538,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                 <input
                   type="number"
                   id="price"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+                  value={formData.price}
+                  onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
                   required
                   min="1"
                   step="any"
@@ -523,8 +567,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                 <input
                   type="text"
                   id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  value={formData.location}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                   required
                   className={`pl-10 block w-full rounded-md focus:ring-blue-500 focus:border-blue-500 ${
                     darkMode 
@@ -551,7 +595,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         <div className="space-y-6">
           {/* Basic measurements */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {(propertyType === 'apartment' || propertyType === 'house') && (
+            {(formData.propertyType === 'apartment' || formData.propertyType === 'house') && (
               <div>
                 <label htmlFor="rooms" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   <div className="flex items-center">
@@ -562,8 +606,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                 <input
                   type="number"
                   id="rooms"
-                  value={rooms}
-                  onChange={(e) => setRooms(e.target.value)}
+                  value={formData.bedrooms}
+                  onChange={(e) => setFormData(prev => ({ ...prev, bedrooms: e.target.value }))}
                   min="0"
                   className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
                     darkMode 
@@ -574,7 +618,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               </div>
             )}
             
-            {(propertyType === 'apartment' || propertyType === 'house') && (
+            {(formData.propertyType === 'apartment' || formData.propertyType === 'house') && (
               <div>
                 <label htmlFor="bathrooms" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   <div className="flex items-center">
@@ -585,8 +629,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                 <input
                   type="number"
                   id="bathrooms"
-                  value={bathrooms}
-                  onChange={(e) => setBathrooms(e.target.value)}
+                  value={formData.bathrooms}
+                  onChange={(e) => setFormData(prev => ({ ...prev, bathrooms: e.target.value }))}
                   min="0"
                   className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
                     darkMode 
@@ -607,8 +651,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               <input
                 type="number"
                 id="area"
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
+                value={formData.area}
+                onChange={(e) => setFormData(prev => ({ ...prev, area: e.target.value }))}
                 min="0"
                 step="0.01"
                 className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
@@ -621,7 +665,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           </div>
           
           {/* Additional property details */}
-          {(propertyType === 'apartment' || propertyType === 'house') && (
+          {(formData.propertyType === 'apartment' || formData.propertyType === 'house') && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
@@ -647,7 +691,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   />
                 </div>
                 
-                {propertyType === 'apartment' && (
+                {formData.propertyType === 'apartment' && (
                   <div>
                     <label htmlFor="floor" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       <div className="flex items-center">
@@ -671,7 +715,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   </div>
                 )}
                 
-                {propertyType === 'apartment' && (
+                {formData.propertyType === 'apartment' && (
                   <div>
                     <label htmlFor="totalFloors" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       <div className="flex items-center">
@@ -801,7 +845,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           </p>
           
           <div className="flex flex-wrap gap-2 mb-4">
-            {features.map((feature, index) => (
+            {formData.features.map((feature, index) => (
               <div key={index} className={`${
                 darkMode ? 'bg-blue-900 text-blue-300' : 'bg-blue-50 text-blue-700'
               } rounded-full px-3 py-1 text-sm flex items-center`}>
@@ -860,13 +904,13 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   key={suggestion}
                   type="button"
                   onClick={() => {
-                    if (!features.includes(suggestion)) {
-                      setFeatures([...features, suggestion]);
+                    if (!formData.features.includes(suggestion)) {
+                      setFormData(prev => ({ ...prev, features: [...prev.features, suggestion] }))
                     }
                   }}
-                  disabled={features.includes(suggestion)}
+                  disabled={formData.features.includes(suggestion)}
                   className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    features.includes(suggestion)
+                    formData.features.includes(suggestion)
                       ? darkMode 
                         ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
                         : 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -989,7 +1033,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   Lloji i shpalljes:
                 </p>
                 <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                  {listingType === 'sale' ? 'Në shitje' : 'Me qira'}
+                  {formData.status === 'for-sale' ? 'Në shitje' : 'Me qira'}
                 </p>
               </div>
               
@@ -998,10 +1042,10 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   Lloji i pronës:
                 </p>
                 <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                  {propertyType === 'apartment' && 'Banesë'}
-                  {propertyType === 'house' && 'Shtëpi'}
-                  {propertyType === 'land' && 'Tokë'}
-                  {propertyType === 'commercial' && 'Lokal'}
+                  {formData.propertyType === 'apartment' && 'Banesë'}
+                  {formData.propertyType === 'house' && 'Shtëpi'}
+                  {formData.propertyType === 'land' && 'Tokë'}
+                  {formData.propertyType === 'commercial' && 'Lokal'}
                 </p>
               </div>
               
@@ -1010,7 +1054,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   Titulli:
                 </p>
                 <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                  {title}
+                  {formData.title}
                 </p>
               </div>
               
@@ -1019,7 +1063,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   Çmimi:
                 </p>
                 <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                  {price} € {listingType === 'rent' ? '/muaj' : ''}
+                  {formData.price} € {formData.status === 'for-rent' ? '/muaj' : ''}
                 </p>
               </div>
               
@@ -1028,7 +1072,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   Lokacioni:
                 </p>
                 <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                  {location}
+                  {formData.location}
                 </p>
               </div>
               
@@ -1037,7 +1081,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                   Përshkrimi:
                 </p>
                 <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                  {description}
+                  {formData.description}
                 </p>
               </div>
             </div>
@@ -1049,35 +1093,35 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {rooms && (
+              {formData.bedrooms && (
                 <div>
                   <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     Dhoma:
                   </p>
                   <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    {rooms}
+                    {formData.bedrooms}
                   </p>
                 </div>
               )}
               
-              {bathrooms && (
+              {formData.bathrooms && (
                 <div>
                   <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     Banjo:
                   </p>
                   <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    {bathrooms}
+                    {formData.bathrooms}
                   </p>
                 </div>
               )}
               
-              {area && (
+              {formData.area && (
                 <div>
                   <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     Sipërfaqja:
                   </p>
                   <p className={`${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    {area} m²
+                    {formData.area} m²
                   </p>
                 </div>
               )}
@@ -1117,14 +1161,14 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
             </div>
           </div>
           
-          {features.length > 0 && (
+          {formData.features.length > 0 && (
             <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
               <h4 className={`text-lg font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                 Karakteristikat
               </h4>
               
               <div className="flex flex-wrap gap-2">
-                {features.map((feature, index) => (
+                {formData.features.map((feature, index) => (
                   <span 
                     key={index}
                     className={`px-3 py-1 rounded-full text-sm ${
