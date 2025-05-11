@@ -13,7 +13,9 @@ import {
   StarOff,
   MapPin,
   Euro,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 interface Property {
@@ -53,6 +55,10 @@ const AdminProperties: React.FC = () => {
   const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(null);
   const [isFeatureModalOpen, setIsFeatureModalOpen] = useState(false);
   const [propertyToToggleFeature, setPropertyToToggleFeature] = useState<Property | null>(null);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [propertyToUpdateStatus, setPropertyToUpdateStatus] = useState<Property | null>(null);
+  const [newStatus, setNewStatus] = useState<string>('');
+  const [statusReason, setStatusReason] = useState<string>('');
 
   const propertiesPerPage = 10;
 
@@ -196,7 +202,9 @@ const AdminProperties: React.FC = () => {
       'active': { color: 'bg-green-100 text-green-800', label: 'Aktiv' },
       'inactive': { color: 'bg-gray-100 text-gray-800', label: 'Joaktiv' },
       'sold': { color: 'bg-blue-100 text-blue-800', label: 'Shitur' },
-      'rented': { color: 'bg-purple-100 text-purple-800', label: 'Dhënë me qira' }
+      'rented': { color: 'bg-purple-100 text-purple-800', label: 'Dhënë me qira' },
+      'pending': { color: 'bg-yellow-100 text-yellow-800', label: 'Në pritje' },
+      'rejected': { color: 'bg-red-100 text-red-800', label: 'Refuzuar' }
     };
     
     const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800', label: status };
@@ -258,6 +266,36 @@ const AdminProperties: React.FC = () => {
       setPropertyToToggleFeature(null);
     } catch (error) {
       console.error('Error updating property featured status:', error);
+      alert('Ndodhi një gabim gjatë ndryshimit të statusit të pronës');
+    }
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!propertyToUpdateStatus || !newStatus) return;
+    
+    try {
+      // Update the property status
+      const { error } = await supabase
+        .from('properties')
+        .update({ 
+          status: newStatus
+        })
+        .eq('id', propertyToUpdateStatus.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Refresh the property list
+      fetchProperties();
+      
+      // Close the modal
+      setIsStatusModalOpen(false);
+      setPropertyToUpdateStatus(null);
+      setNewStatus('');
+      setStatusReason('');
+    } catch (error) {
+      console.error('Error updating property status:', error);
       alert('Ndodhi një gabim gjatë ndryshimit të statusit të pronës');
     }
   };
@@ -335,8 +373,10 @@ const AdminProperties: React.FC = () => {
                   }}
                 >
                   <option value="">Të gjitha statuset</option>
+                  <option value="pending">Në pritje</option>
                   <option value="active">Aktive</option>
                   <option value="inactive">Joaktive</option>
+                  <option value="rejected">Refuzuar</option>
                   <option value="sold">Shitur</option>
                   <option value="rented">Dhënë me qira</option>
                 </select>
@@ -393,7 +433,9 @@ const AdminProperties: React.FC = () => {
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {properties.map((property) => (
-                  <tr key={property.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <tr key={property.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                    property.status === 'pending' ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''
+                  }`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-14 rounded overflow-hidden">
@@ -501,6 +543,51 @@ const AdminProperties: React.FC = () => {
                               <Edit className="h-4 w-4 mr-2" />
                               Edito
                             </button>
+                            
+                            {property.status === 'pending' && (
+                              <>
+                                <button
+                                  className="w-full text-left block px-4 py-2 text-sm text-green-700 dark:text-green-200 hover:bg-green-50 dark:hover:bg-green-900/30 flex items-center"
+                                  onClick={() => {
+                                    setPropertyToUpdateStatus(property);
+                                    setNewStatus('active');
+                                    setIsStatusModalOpen(true);
+                                    setShowPropertyMenu(null);
+                                  }}
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Aprovo
+                                </button>
+                                
+                                <button
+                                  className="w-full text-left block px-4 py-2 text-sm text-red-700 dark:text-red-200 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center"
+                                  onClick={() => {
+                                    setPropertyToUpdateStatus(property);
+                                    setNewStatus('rejected');
+                                    setIsStatusModalOpen(true);
+                                    setShowPropertyMenu(null);
+                                  }}
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Refuzo
+                                </button>
+                              </>
+                            )}
+                            
+                            {property.status !== 'pending' && (
+                              <button
+                                className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center"
+                                onClick={() => {
+                                  setPropertyToUpdateStatus(property);
+                                  setNewStatus('');
+                                  setIsStatusModalOpen(true);
+                                  setShowPropertyMenu(null);
+                                }}
+                              >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Ndrysho statusin
+                              </button>
+                            )}
                             
                             <button
                               className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center"
@@ -752,6 +839,111 @@ const AdminProperties: React.FC = () => {
                   onClick={handleToggleFeature}
                 >
                   {propertyToToggleFeature.featured ? 'Hiq reklamimin' : 'Shto në të reklamuara'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Status Modal */}
+      {isStatusModalOpen && propertyToUpdateStatus && (
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setIsStatusModalOpen(false)}></div>
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg max-w-md w-full mx-4 overflow-hidden shadow-xl transform transition-all">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-blue-100 dark:bg-blue-900 rounded-full mb-4">
+                {newStatus === 'active' ? (
+                  <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-300" />
+                ) : newStatus === 'rejected' ? (
+                  <XCircle className="h-6 w-6 text-red-600 dark:text-red-300" />
+                ) : (
+                  <Edit className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+                )}
+              </div>
+              <h3 className="text-lg font-medium text-center text-gray-900 dark:text-white mb-4">
+                {newStatus === 'active' ? 'Aprovo Pronën' : 
+                 newStatus === 'rejected' ? 'Refuzo Pronën' : 
+                 'Ndrysho Statusin e Pronës'}
+              </h3>
+              
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">
+                {newStatus === 'active' ? (
+                  <>Jeni i sigurt që dëshironi të aprovoni pronën <span className="font-medium text-gray-900 dark:text-white">{propertyToUpdateStatus.title}</span>?</>
+                ) : newStatus === 'rejected' ? (
+                  <>Jeni i sigurt që dëshironi të refuzoni pronën <span className="font-medium text-gray-900 dark:text-white">{propertyToUpdateStatus.title}</span>?</>
+                ) : (
+                  <>Zgjidhni statusin e ri për pronën <span className="font-medium text-gray-900 dark:text-white">{propertyToUpdateStatus.title}</span></>
+                )}
+              </p>
+              
+              {!newStatus && (
+                <div className="mb-4">
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Statusi i ri
+                  </label>
+                  <select
+                    id="status"
+                    className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 px-3 focus:ring-blue-500 focus:border-blue-500"
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    required
+                  >
+                    <option value="">Zgjidhni statusin</option>
+                    <option value="active">Aktiv</option>
+                    <option value="inactive">Joaktiv</option>
+                    <option value="pending">Në pritje</option>
+                    <option value="rejected">Refuzuar</option>
+                    <option value="sold">Shitur</option>
+                    <option value="rented">Dhënë me qira</option>
+                  </select>
+                </div>
+              )}
+              
+              {(newStatus === 'rejected' || newStatus === '') && (
+                <div className="mb-4">
+                  <label htmlFor="reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Arsyeja (opsionale)
+                  </label>
+                  <textarea
+                    id="reason"
+                    className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 px-3 focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Shënoni arsyen për ndryshimin e statusit..."
+                    value={statusReason}
+                    onChange={(e) => setStatusReason(e.target.value)}
+                  ></textarea>
+                </div>
+              )}
+              
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
+                  onClick={() => {
+                    setIsStatusModalOpen(false);
+                    setPropertyToUpdateStatus(null);
+                    setNewStatus('');
+                    setStatusReason('');
+                  }}
+                >
+                  Anulo
+                </button>
+                <button
+                  type="button"
+                  className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+                    newStatus === 'active' 
+                      ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' 
+                      : newStatus === 'rejected'
+                        ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+                        : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                  }`}
+                  onClick={handleUpdateStatus}
+                  disabled={!newStatus}
+                >
+                  {newStatus === 'active' ? 'Aprovo' : 
+                   newStatus === 'rejected' ? 'Refuzo' : 
+                   'Ndrysho Statusin'}
                 </button>
               </div>
             </div>

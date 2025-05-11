@@ -20,12 +20,18 @@ const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
   rejected: 'bg-red-100 text-red-800',
   expired: 'bg-gray-200 text-gray-700',
+  inactive: 'bg-gray-200 text-gray-700',
+  sold: 'bg-green-100 text-green-800',
+  rented: 'bg-purple-100 text-purple-800',
 };
 const statusLabels: Record<string, string> = {
   active: 'Aktiv',
   pending: 'Në rishikim',
   rejected: 'Refuzuar',
   expired: 'Skaduar',
+  inactive: 'Joaktiv',
+  sold: 'Shitur',
+  rented: 'Dhënë me qira',
 };
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
@@ -338,6 +344,16 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           {/* Only show edit/delete buttons to the property owner */}
           {isOwner && (
             <div className="flex justify-center gap-2 mt-1">
+              {status === 'pending' && (
+                <span className="flex items-center px-3 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
+                  <Clock className="h-4 w-4 mr-1" /> Në pritje për aprovim
+                </span>
+              )}
+              {status === 'rejected' && (
+                <span className="flex items-center px-3 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">
+                  <XCircle className="h-4 w-4 mr-1" /> Refuzuar
+                </span>
+              )}
               <Link to={`/edit-property/${property.id}`} className="flex items-center px-3 py-1 bg-gray-100 hover:bg-blue-100 text-blue-700 rounded text-xs font-medium">
                 <Edit className="h-4 w-4 mr-1" /> Ndrysho
               </Link>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import PropertyCard from '../components/PropertyCard';
-import { Building, Plus } from 'lucide-react';
+import { Building, Plus, Filter } from 'lucide-react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { supabase } from '../lib/supabase';
 import { Property } from '../types';
@@ -14,6 +14,7 @@ const MyPropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
     async function fetchUserProperties() {
@@ -22,11 +23,17 @@ const MyPropertiesPage: React.FC = () => {
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
+        let query = supabase
           .from('properties')
           .select('*')
-          .eq('owner_id', authState.user.id)
-          .order('created_at', { ascending: false });
+          .eq('owner_id', authState.user.id);
+          
+        // Apply status filter if not 'all'
+        if (statusFilter !== 'all') {
+          query = query.eq('status', statusFilter);
+        }
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
           
         if (error) {
           throw error;
@@ -42,19 +49,39 @@ const MyPropertiesPage: React.FC = () => {
     }
     
     fetchUserProperties();
-  }, [authState.user]);
+  }, [authState.user, statusFilter]);
 
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Pronat e mia</h1>
-        <Link 
-          to="/add-property" 
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Shto pronë
-        </Link>
+        <div className="flex gap-4">
+          <div className="flex items-center">
+            <Filter className="h-5 w-5 text-gray-400 mr-2" />
+            <select
+              className={`rounded-lg border ${
+                darkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'
+              } py-2 pl-3 pr-8 focus:ring-blue-500 focus:border-blue-500`}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">Të gjitha statuset</option>
+              <option value="pending">Në pritje</option>
+              <option value="active">Aktive</option>
+              <option value="inactive">Joaktive</option>
+              <option value="rejected">Refuzuar</option>
+              <option value="sold">Shitur</option>
+              <option value="rented">Dhënë me qira</option>
+            </select>
+          </div>
+          <Link 
+            to="/add-property" 
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Shto pronë
+          </Link>
+        </div>
       </div>
       
       {loading ? (
