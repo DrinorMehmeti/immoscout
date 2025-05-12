@@ -92,8 +92,27 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       }
       
       const bucketExists = buckets.some(bucket => bucket.name === 'property_images');
+      
+      // Create the bucket if it doesn't exist
       if (!bucketExists) {
-        throw new Error('Bucket not found');
+        try {
+          const { data, error } = await supabase
+            .storage
+            .createBucket('property_images', {
+              public: true,
+              fileSizeLimit: 10485760, // 10MB
+            });
+            
+          if (error) {
+            console.error('Error creating bucket:', error);
+            throw new Error('Error creating storage bucket');
+          }
+          
+          console.log('Created bucket:', data);
+        } catch (err) {
+          console.error('Error in bucket creation:', err);
+          throw new Error('Could not create storage bucket. Make sure you have the necessary permissions.');
+        }
       }
       
       // Upload each image
