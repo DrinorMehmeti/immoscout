@@ -232,7 +232,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         } catch (uploadError) {
           console.error('Error uploading images:', uploadError);
           // Don't fail the entire process if uploading images fails
-          setError('Prona u shtua, por ndodhi një gabim gjatë ngarkimit të fotove. Ju mund t'i shtoni më vonë.');
+          setError('Prona u shtua, por ndodhi një gabim gjatë ngarkimit të fotove. Ju mund t\'i shtoni më vonë.');
         }
       }
       
