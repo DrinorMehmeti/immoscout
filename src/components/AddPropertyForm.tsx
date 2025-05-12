@@ -10,26 +10,6 @@ interface AddPropertyFormProps {
   onSuccess?: () => void;
 }
 
-// Helper function for retry mechanism
-const retryOperation = async (
-  operation: () => Promise<any>,
-  maxRetries = 3,
-  delay = 1000
-): Promise<any> => {
-  let lastError;
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await operation();
-    } catch (error) {
-      console.warn(`Operation failed (attempt ${i + 1}/${maxRetries})`, error);
-      lastError = error;
-      // Wait with exponential backoff before retrying
-      await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
-    }
-  }
-  throw lastError;
-};
-
 const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const { authState } = useAuth();
   const { darkMode } = useTheme();
@@ -91,29 +71,52 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     setImagePreviewUrls(prevUrls => prevUrls.filter((_, i) => i !== index));
   };
   
+  // Helper function to retry operations with exponential backoff
+  const retryOperation = async (
+    operation: () => Promise<any>,
+    maxRetries = 3,
+    initialDelay = 500
+  ) => {
+    let retries = 0;
+    while (retries < maxRetries) {
+      try {
+        return await operation();
+      } catch (error) {
+        retries++;
+        if (retries >= maxRetries) throw error;
+        
+        // Exponential backoff
+        const delay = initialDelay * Math.pow(2, retries - 1);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  };
+  
   const uploadImagesToStorage = async (propertyId: string): Promise<string[]> => {
     if (images.length === 0) return [];
     
     try {
       const uploadedUrls: string[] = [];
       
-      // Create a folder for this property using the user's ID and property ID
+      // Get the authenticated user's ID
       const userId = authState.user?.id;
       if (!userId) throw new Error('User ID not found');
       
-      // Upload directly without checking or creating bucket
-      // This avoids potential timeouts and HTML response errors
+      // Upload each image
       for (let i = 0; i < images.length; i++) {
-        const file = images[i];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `${userId}/${propertyId}/${fileName}`;
-        
-        // Update progress
-        setUploadProgress(Math.round(((i + 1) / images.length) * 100));
-        
         try {
-          // Use retry mechanism for upload operation
+          const file = images[i];
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+          
+          // IMPORTANT: The storage RLS policy expects the format "userId/propertyId/fileName"
+          // Make sure the path follows this exact structure to match the RLS policy
+          const filePath = `${userId}/${propertyId}/${fileName}`;
+          
+          // Update progress
+          setUploadProgress(Math.round(((i + 1) / images.length) * 100));
+          
+          // Use retry mechanism for uploads
           const { data, error } = await retryOperation(() => 
             supabase.storage
               .from('property_images')
@@ -125,8 +128,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
             
           if (error) {
             console.error('Error uploading image:', error);
-            // Continue with other uploads even if one fails
-            continue;
+            throw error;
           }
           
           if (data) {
@@ -137,16 +139,16 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               
             uploadedUrls.push(publicUrl);
           }
-        } catch (uploadError) {
-          console.error(`Failed to upload image ${i + 1}:`, uploadError);
-          // Continue with other uploads even if one fails
+        } catch (err) {
+          console.error(`Failed to upload image ${i + 1}:`, err);
+          // Continue with other images even if one fails
         }
       }
       
       return uploadedUrls;
     } catch (error) {
       console.error('Error in upload process:', error);
-      throw new Error('Ndodhi një gabim gjatë ngarkimit të fotove. Ju lutemi provoni përsëri më vonë.');
+      throw error;
     }
   };
   
@@ -207,13 +209,13 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         throw new Error('Ndodhi një gabim gjatë shtimit të pronës');
       }
       
-      // Upload images if any and catch errors separately
+      // Upload images if any
       let uploadedImageUrls: string[] = [];
       if (images.length > 0) {
         try {
           uploadedImageUrls = await uploadImagesToStorage(property.id);
           
-          // Update the property with the image URLs if any were uploaded
+          // Update the property with the image URLs
           if (uploadedImageUrls.length > 0) {
             const { error: updateError } = await supabase
               .from('properties')
@@ -229,9 +231,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           }
         } catch (uploadError) {
           console.error('Error uploading images:', uploadError);
-          // Don't throw here, we still created the property successfully
-          // Just inform the user that images weren't uploaded
-          setError(`Prona u shtua, por fotot nuk u ngarkuan: ${uploadError instanceof Error ? uploadError.message : 'Ndodhi një gabim i papritur'}`);
+          // Don't fail the entire process if uploading images fails
+          setError('Prona u shtua, por ndodhi një gabim gjatë ngarkimit të fotove. Ju mund t'i shtoni më vonë.');
         }
       }
       
