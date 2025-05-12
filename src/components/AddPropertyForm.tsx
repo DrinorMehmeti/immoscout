@@ -10,6 +10,26 @@ interface AddPropertyFormProps {
   onSuccess?: () => void;
 }
 
+// Helper function for retry mechanism
+const retryOperation = async (
+  operation: () => Promise<any>,
+  maxRetries = 3,
+  delay = 1000
+): Promise<any> => {
+  let lastError;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      console.warn(`Operation failed (attempt ${i + 1}/${maxRetries})`, error);
+      lastError = error;
+      // Wait with exponential backoff before retrying
+      await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+    }
+  }
+  throw lastError;
+};
+
 const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const { authState } = useAuth();
   const { darkMode } = useTheme();
@@ -81,41 +101,8 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       const userId = authState.user?.id;
       if (!userId) throw new Error('User ID not found');
       
-      // Check if the bucket exists first
-      const { data: buckets, error: bucketError } = await supabase
-        .storage
-        .listBuckets();
-      
-      if (bucketError) {
-        console.error('Error checking buckets:', bucketError);
-        throw new Error('Error checking storage buckets');
-      }
-      
-      const bucketExists = buckets.some(bucket => bucket.name === 'property_images');
-      
-      // Create the bucket if it doesn't exist
-      if (!bucketExists) {
-        try {
-          const { data, error } = await supabase
-            .storage
-            .createBucket('property_images', {
-              public: true,
-              fileSizeLimit: 10485760, // 10MB
-            });
-            
-          if (error) {
-            console.error('Error creating bucket:', error);
-            throw new Error('Error creating storage bucket');
-          }
-          
-          console.log('Created bucket:', data);
-        } catch (err) {
-          console.error('Error in bucket creation:', err);
-          throw new Error('Could not create storage bucket. Make sure you have the necessary permissions.');
-        }
-      }
-      
-      // Upload each image
+      // Upload directly without checking or creating bucket
+      // This avoids potential timeouts and HTML response errors
       for (let i = 0; i < images.length; i++) {
         const file = images[i];
         const fileExt = file.name.split('.').pop();
@@ -125,32 +112,41 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         // Update progress
         setUploadProgress(Math.round(((i + 1) / images.length) * 100));
         
-        const { data, error } = await supabase.storage
-          .from('property_images')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-          
-        if (error) {
-          console.error('Error uploading image:', error);
-          throw error;
-        }
-        
-        if (data) {
-          // Get the public URL for the uploaded image
-          const { data: { publicUrl } } = supabase.storage
-            .from('property_images')
-            .getPublicUrl(filePath);
+        try {
+          // Use retry mechanism for upload operation
+          const { data, error } = await retryOperation(() => 
+            supabase.storage
+              .from('property_images')
+              .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false
+              })
+          );
             
-          uploadedUrls.push(publicUrl);
+          if (error) {
+            console.error('Error uploading image:', error);
+            // Continue with other uploads even if one fails
+            continue;
+          }
+          
+          if (data) {
+            // Get the public URL for the uploaded image
+            const { data: { publicUrl } } = supabase.storage
+              .from('property_images')
+              .getPublicUrl(filePath);
+              
+            uploadedUrls.push(publicUrl);
+          }
+        } catch (uploadError) {
+          console.error(`Failed to upload image ${i + 1}:`, uploadError);
+          // Continue with other uploads even if one fails
         }
       }
       
       return uploadedUrls;
     } catch (error) {
       console.error('Error in upload process:', error);
-      throw error;
+      throw new Error('Ndodhi një gabim gjatë ngarkimit të fotove. Ju lutemi provoni përsëri më vonë.');
     }
   };
   
@@ -211,23 +207,31 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
         throw new Error('Ndodhi një gabim gjatë shtimit të pronës');
       }
       
-      // Upload images if any
+      // Upload images if any and catch errors separately
+      let uploadedImageUrls: string[] = [];
       if (images.length > 0) {
-        const uploadedImageUrls = await uploadImagesToStorage(property.id);
-        
-        // Update the property with the image URLs
-        if (uploadedImageUrls.length > 0) {
-          const { error: updateError } = await supabase
-            .from('properties')
-            .update({
-              images: uploadedImageUrls
-            })
-            .eq('id', property.id);
-            
-          if (updateError) {
-            console.error('Error updating property with image URLs:', updateError);
-            // Continue anyway, the property was created successfully
+        try {
+          uploadedImageUrls = await uploadImagesToStorage(property.id);
+          
+          // Update the property with the image URLs if any were uploaded
+          if (uploadedImageUrls.length > 0) {
+            const { error: updateError } = await supabase
+              .from('properties')
+              .update({
+                images: uploadedImageUrls
+              })
+              .eq('id', property.id);
+              
+            if (updateError) {
+              console.error('Error updating property with image URLs:', updateError);
+              // Continue anyway, the property was created successfully
+            }
           }
+        } catch (uploadError) {
+          console.error('Error uploading images:', uploadError);
+          // Don't throw here, we still created the property successfully
+          // Just inform the user that images weren't uploaded
+          setError(`Prona u shtua, por fotot nuk u ngarkuan: ${uploadError instanceof Error ? uploadError.message : 'Ndodhi një gabim i papritur'}`);
         }
       }
       
