@@ -118,7 +118,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           // Use retry mechanism for uploads
           const { data, error } = await retryOperation(() => 
             supabase.storage
-              .from('property_images')
+              .from('property-images')
               .upload(filePath, file, {
                 cacheControl: '3600',
                 upsert: false
@@ -133,7 +133,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           if (data) {
             // Get the public URL for the uploaded image
             const { data: { publicUrl } } = supabase.storage
-              .from('property_images')
+              .from('property-images')
               .getPublicUrl(filePath);
               
             uploadedUrls.push(publicUrl);
