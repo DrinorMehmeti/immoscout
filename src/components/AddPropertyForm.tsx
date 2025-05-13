@@ -109,9 +109,9 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
           
-          // IMPORTANT: The storage RLS policy expects the format "userId/propertyId/fileName"
-          // Make sure the path follows this exact structure to match the RLS policy
-          const filePath = `${userId}/${propertyId}/${fileName}`;
+          // The path should be userId/fileName - this matches the RLS policies in Supabase
+          // Changed from userId/propertyId/fileName to userId/fileName
+          const filePath = `${userId}/${fileName}`;
           
           // Update progress
           setUploadProgress(Math.round(((i + 1) / images.length) * 100));
