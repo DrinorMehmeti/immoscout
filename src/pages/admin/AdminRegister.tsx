@@ -12,6 +12,7 @@ const AdminRegister: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [emailExists, setEmailExists] = useState(false);
   const navigate = useNavigate();
   const { darkMode, toggleDarkMode } = useTheme();
 
@@ -19,16 +20,19 @@ const AdminRegister: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setEmailExists(false);
     
     try {
       // Basic validation
       if (password !== confirmPassword) {
         setError('Fjalëkalimet nuk përputhen');
+        setIsLoading(false);
         return;
       }
       
       if (password.length < 6) {
         setError('Fjalëkalimi duhet të ketë të paktën 6 karaktere');
+        setIsLoading(false);
         return;
       }
       
@@ -38,8 +42,17 @@ const AdminRegister: React.FC = () => {
         password,
       });
       
-      if (signUpError || !authData.user) {
-        throw signUpError || new Error('Regjistrimi dështoi');
+      if (signUpError) {
+        // Handle the specific case of already registered user
+        if (signUpError.message.includes('already registered') || signUpError.message.includes('user_already_exists')) {
+          setEmailExists(true);
+          throw new Error('Ky email është tashmë i regjistruar. Ju lutemi kyçuni ose përdorni një email tjetër.');
+        }
+        throw signUpError;
+      }
+      
+      if (!authData.user) {
+        throw new Error('Regjistrimi dështoi');
       }
       
       // Create profile with admin rights
@@ -91,7 +104,17 @@ const AdminRegister: React.FC = () => {
               <div className={`mb-6 rounded-md p-4 ${darkMode ? 'bg-red-900/30 text-red-200' : 'bg-red-50 text-red-800'}`}>
                 <div className="flex">
                   <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
-                  <p className="text-sm">{error}</p>
+                  <div>
+                    <p className="text-sm">{error}</p>
+                    {emailExists && (
+                      <Link 
+                        to="/admin/login" 
+                        className={`block mt-2 text-sm font-medium ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}
+                      >
+                        Shko te faqja e kyçjes
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -209,9 +232,9 @@ const AdminRegister: React.FC = () => {
                 <div>
                   <button
                     type="submit"
-                    disabled={isLoading || success}
+                    disabled={isLoading || success || emailExists}
                     className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                      (isLoading || success) ? 'opacity-70 cursor-not-allowed' : ''
+                      (isLoading || success || emailExists) ? 'opacity-70 cursor-not-allowed' : ''
                     }`}
                   >
                     {isLoading ? (
