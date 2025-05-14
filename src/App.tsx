@@ -17,6 +17,7 @@ import PremiumPage from './pages/PremiumPage';
 import AddPropertyPage from './pages/AddPropertyPage';
 import PropertyDetail from './pages/PropertyDetail';
 import AdminLogin from './pages/admin/AdminLogin';
+import AdminRegister from './pages/admin/AdminRegister';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminProperties from './pages/admin/AdminProperties';
@@ -272,8 +273,9 @@ function App() {
           <Route path="/listings" element={<ListingsPage />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           
-          {/* Admin login route */}
+          {/* Admin login and register routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/register" element={<AdminRegister />} />
           
           {/* Protected routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

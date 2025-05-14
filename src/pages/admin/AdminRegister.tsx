@@ -1,25 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Mail, Lock, Shield, AlertCircle } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Mail, Lock, User, Shield, ArrowLeft, AtSign, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 
-const AdminLogin: React.FC = () => {
+const AdminRegister: React.FC = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { authState, login } = useAuth();
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const { darkMode, toggleDarkMode } = useTheme();
-
-  // If already authenticated and is admin, redirect to admin dashboard
-  useEffect(() => {
-    if (authState.isAuthenticated && authState.user?.profile?.is_admin) {
-      navigate('/admin');
-    }
-  }, [authState, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,39 +21,52 @@ const AdminLogin: React.FC = () => {
     setError('');
     
     try {
-      // First, attempt to log in the user
-      const success = await login(email, password);
-      
-      if (!success || !authState.user?.id) {
-        setError('Email ose fjalëkalimi i gabuar');
-        setIsLoading(false);
+      // Basic validation
+      if (password !== confirmPassword) {
+        setError('Fjalëkalimet nuk përputhen');
         return;
       }
       
-      // Check if the logged in user is an admin
-      const { data: profile, error: profileError } = await supabase
+      if (password.length < 6) {
+        setError('Fjalëkalimi duhet të ketë të paktën 6 karaktere');
+        return;
+      }
+      
+      // Register the user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      
+      if (signUpError || !authData.user) {
+        throw signUpError || new Error('Regjistrimi dështoi');
+      }
+      
+      // Create profile with admin rights
+      const { error: profileError } = await supabase
         .from('profiles')
-        .select('is_admin')
-        .eq('id', authState.user.id)
-        .single();
+        .insert({
+          id: authData.user.id,
+          name,
+          user_type: 'admin', // Special user type for admins
+          is_premium: false,
+          is_admin: true, // Set as admin
+          personal_id: `ADMIN-${Math.random().toString(36).substring(2, 8)}`
+        });
         
       if (profileError) {
         throw profileError;
       }
       
-      if (!profile || !profile.is_admin) {
-        setError('Ju nuk keni autorizim për të hyrë në panelin e administratorit');
-        // Log the user out since they're not an admin
-        await supabase.auth.signOut();
-        setIsLoading(false);
-        return;
-      }
+      // Set success state and automatically redirect after a delay
+      setSuccess(true);
+      setTimeout(() => {
+        navigate('/admin/login');
+      }, 3000);
       
-      // User is an admin, redirect to admin dashboard
-      navigate('/admin');
     } catch (err) {
-      console.error('Error during admin login:', err);
-      setError('Ndodhi një gabim gjatë kyçjes');
+      console.error('Registration error:', err);
+      setError(err instanceof Error ? err.message : 'Ndodhi një gabim i papritur gjatë regjistrimit');
     } finally {
       setIsLoading(false);
     }
@@ -74,9 +81,9 @@ const AdminLogin: React.FC = () => {
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
                 <Shield className="h-8 w-8 text-blue-600" />
               </div>
-              <h2 className={`mt-6 text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Admin Panel</h2>
+              <h2 className={`mt-6 text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Krijo llogari Admin</h2>
               <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Kyçuni për të menaxhuar platformën
+                Regjistrohuni për të menaxhuar platformën
               </p>
             </div>
             
@@ -89,8 +96,39 @@ const AdminLogin: React.FC = () => {
               </div>
             )}
             
+            {success && (
+              <div className={`mb-6 rounded-md p-4 ${darkMode ? 'bg-green-900/30 text-green-200' : 'bg-green-50 text-green-800'}`}>
+                <p className="text-sm">Regjistrimi u krye me sukses! Do të ridrejtoheni te faqja e kyçjes...</p>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit}>
               <div className="space-y-5">
+                <div>
+                  <label htmlFor="name" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Emri i plotë
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
+                      required
+                      className={`pl-10 block w-full rounded-md ${
+                        darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500 focus:border-blue-500' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      } shadow-sm`}
+                      placeholder="Emri Mbiemri"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
                 <div>
                   <label htmlFor="email" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Email
@@ -129,14 +167,14 @@ const AdminLogin: React.FC = () => {
                       id="password"
                       name="password"
                       type="password"
-                      autoComplete="current-password"
+                      autoComplete="new-password"
                       required
                       className={`pl-10 block w-full rounded-md ${
                         darkMode 
                           ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500 focus:border-blue-500' 
                           : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       } shadow-sm`}
-                      placeholder="********"
+                      placeholder="Minimum 6 karaktere"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
@@ -144,11 +182,36 @@ const AdminLogin: React.FC = () => {
                 </div>
                 
                 <div>
+                  <label htmlFor="confirmPassword" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Konfirmo fjalëkalimin
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      required
+                      className={`pl-10 block w-full rounded-md ${
+                        darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500 focus:border-blue-500' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      } shadow-sm`}
+                      placeholder="Përsërit fjalëkalimin"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div>
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || success}
                     className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                      isLoading ? 'opacity-70 cursor-not-allowed' : ''
+                      (isLoading || success) ? 'opacity-70 cursor-not-allowed' : ''
                     }`}
                   >
                     {isLoading ? (
@@ -157,10 +220,12 @@ const AdminLogin: React.FC = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Duke u kyçur...
+                        Duke u regjistruar...
                       </div>
+                    ) : success ? (
+                      'Regjistruar me sukses!'
                     ) : (
-                      'Kyçu si Administrator'
+                      'Krijo llogari'
                     )}
                   </button>
                 </div>
@@ -177,21 +242,14 @@ const AdminLogin: React.FC = () => {
                 </button>
               </div>
               <div className="text-sm">
-                <Link
-                  to="/admin/register"
-                  className={`font-medium ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}
+                <Link 
+                  to="/admin/login"
+                  className={`font-medium flex items-center ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}
                 >
-                  Krijo llogari admin
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  Kthehu te kyçja
                 </Link>
               </div>
-            </div>
-            <div className="mt-4 text-center">
-              <Link
-                to="/"
-                className={`text-sm font-medium ${darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'}`}
-              >
-                Kthehu te faqja kryesore
-              </Link>
             </div>
           </div>
           
@@ -204,4 +262,4 @@ const AdminLogin: React.FC = () => {
   );
 };
 
-export default AdminLogin;
+export default AdminRegister;
