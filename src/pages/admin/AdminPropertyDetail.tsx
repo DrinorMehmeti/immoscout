@@ -26,7 +26,8 @@ import {
   CheckCircle,
   XCircle,
   Copy,
-  Info
+  Info,
+  AlertCircle
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -99,12 +100,12 @@ const AdminPropertyDetail: React.FC = () => {
           throw new Error('Prona nuk u gjet');
         }
         
-        // Fetch owner details
+        // Fetch owner details - using maybeSingle() instead of single() to handle no rows
         const { data: ownerData, error: ownerError } = await supabase
           .from('profiles')
           .select('name, user_type, is_premium, personal_id')
           .eq('id', propertyData.owner_id)
-          .single();
+          .maybeSingle();
           
         if (ownerError) {
           console.error('Error fetching owner:', ownerError);
@@ -507,7 +508,7 @@ const AdminPropertyDetail: React.FC = () => {
                 
                 <div className="flex items-center mt-2">
                   <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                    {property.owner?.name.charAt(0) || 'U'}
+                    {property.owner?.name?.charAt(0) || 'U'}
                   </div>
                   <div className="ml-3">
                     <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -516,7 +517,7 @@ const AdminPropertyDetail: React.FC = () => {
                     <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       {property.owner?.user_type === 'seller' ? 'Shitës' : 
                        property.owner?.user_type === 'landlord' ? 'Qiradhënës' : 
-                       property.owner?.user_type}
+                       property.owner?.user_type || 'N/A'}
                       {property.owner?.is_premium && (
                         <span className="ml-1 text-yellow-500">★ Premium</span>
                       )}
