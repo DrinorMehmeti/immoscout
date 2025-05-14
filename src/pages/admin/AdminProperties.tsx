@@ -1,26 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import AdminLayout from '../../layouts/AdminLayout';
-import { 
-  Search, 
-  Filter, 
-  MoreHorizontal, 
-  Building, 
-  Edit, 
-  Trash2, 
-  Eye,
-  Star,
-  StarOff,
-  MapPin,
-  Euro,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Clock,
-  CircleCheck,
-  CircleX,
-  CirclePause
-} from 'lucide-react';
+import { Search, Filter, MoreHorizontal, Building, Edit, Trash2, Eye, Star, StarOff, MapPin, Euro, AlertTriangle, CheckCircle, XCircle, Clock, CheckCircle as CircleCheck, Circle as CircleX, PauseCircle as CirclePause } from 'lucide-react';
 
 interface Property {
   id: string;
