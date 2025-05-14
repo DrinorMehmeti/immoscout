@@ -12,7 +12,8 @@ import {
   ShieldOff, 
   Mail,
   EyeOff,
-  Copy
+  Copy,
+  AlertCircle
 } from 'lucide-react';
 
 interface UserProfile {
@@ -42,6 +43,7 @@ const AdminUsers: React.FC = () => {
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [userToTogglePremium, setUserToTogglePremium] = useState<UserProfile | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showIdGuidance, setShowIdGuidance] = useState(false);
 
   const usersPerPage = 10;
 
@@ -198,6 +200,42 @@ const AdminUsers: React.FC = () => {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Shikoni dhe menaxhoni përdoruesit e platformës
         </p>
+      </div>
+      
+      {/* Personal ID Guidance */}
+      <div className="mb-6 px-4 sm:px-6">
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 relative">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-blue-400" aria-hidden="true" />
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                Udhëzime për ID-të personale
+              </h3>
+              <div className="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                <p>
+                  ID-të personale (Personal ID) janë private dhe duhet përdorur vetëm për identifikim të klientëve në komunikim të drejtpërdrejtë. 
+                  <button 
+                    onClick={() => setShowIdGuidance(!showIdGuidance)}
+                    className="ml-2 underline hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+                  >
+                    {showIdGuidance ? 'Fshih detajet' : 'Shiko më shumë'}
+                  </button>
+                </p>
+                {showIdGuidance && (
+                  <ul className="list-disc ml-5 mt-2 space-y-1 text-sm">
+                    <li>Kërkoni këtë ID vetëm nga klientët për qëllime verifikimi</li>
+                    <li>Mos e ndani asnjëherë ID-në e një klienti me dikë tjetër</li>
+                    <li>Përdorni ID-të për të verifikuar identitetin e klientëve gjatë komunikimit telefonik</li>
+                    <li>ID-të personale nuk duhet të shfaqen në dokumente publike</li>
+                    <li>Kërkoni ID-në personale nga klientët kur nevojitet verifikim shtesë i identitetit</li>
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       
       {/* Filters and search */}

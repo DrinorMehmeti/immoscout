@@ -25,7 +25,8 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
-  Copy
+  Copy,
+  Info
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -67,6 +68,7 @@ const AdminPropertyDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [copiedId, setCopiedId] = useState(false);
+  const [showIdInfo, setShowIdInfo] = useState(false);
   
   // Modals state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -479,9 +481,30 @@ const AdminPropertyDetail: React.FC = () => {
             {/* Owner info */}
             <div className="mt-4 lg:mt-0 lg:ml-4 flex-shrink-0">
               <div className={`${darkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-lg`}>
-                <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Informacionet e pronarit
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                    Informacionet e pronarit
+                  </h3>
+                  <button 
+                    onClick={() => setShowIdInfo(!showIdInfo)} 
+                    className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                    title="Informacion mbi ID-në personale"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
+                </div>
+                
+                {showIdInfo && (
+                  <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded">
+                    <p className="font-medium mb-1">Udhëzime për përdorimin e ID-së personale:</p>
+                    <ul className="list-disc ml-4 space-y-0.5">
+                      <li>Kërko ID-në personale nga klienti vetëm për verifikim</li>
+                      <li>Mos e ndaj këtë ID me palë të treta</li>
+                      <li>Përdor ID-në vetëm për identifikim të klientëve në komunikim direkt</li>
+                    </ul>
+                  </div>
+                )}
+                
                 <div className="flex items-center mt-2">
                   <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
                     {property.owner?.name.charAt(0) || 'U'}
@@ -636,6 +659,24 @@ const AdminPropertyDetail: React.FC = () => {
           
           {/* Side column - Stats and actions */}
           <div className="space-y-6">
+            {/* Guidance for Personal ID */}
+            <div className={`${darkMode ? 'bg-blue-900/20' : 'bg-blue-50'} border ${darkMode ? 'border-blue-800' : 'border-blue-200'} rounded-lg p-4`}>
+              <div className="flex items-center mb-2">
+                <AlertCircle className="h-5 w-5 text-blue-500 mr-2" />
+                <h3 className={`text-sm font-medium ${darkMode ? 'text-blue-300' : 'text-blue-800'}`}>Udhëzime për ID-në personale</h3>
+              </div>
+              <p className={`text-sm ${darkMode ? 'text-blue-300' : 'text-blue-700'} mb-2`}>
+                ID-ja personale duhet përdorur vetëm për verifikim të identitetit të klientit:
+              </p>
+              <ul className={`text-xs ${darkMode ? 'text-blue-300' : 'text-blue-700'} list-disc pl-5 space-y-1`}>
+                <li>Kërkoje këtë ID nga klienti vetëm kur nevojitet verifikim</li>
+                <li>Përdore për të verifikuar identitetin e klientit gjatë thirrjeve telefonike</li>
+                <li>Mos e ndaj me palë të treta apo në komunikime publike</li>
+                <li>Në komunikim me klientin, mund t'i kërkosh "ID-në personale nga platforma"</li>
+                <li>Kjo ID nuk duhet përdorur për qëllime të tjera përveç verifikimit</li>
+              </ul>
+            </div>
+                        
             {/* Property details */}
             <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-6`}>
               <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'} mb-4`}>

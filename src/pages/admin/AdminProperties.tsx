@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import AdminLayout from '../../layouts/AdminLayout';
-import { Link } from 'react-router-dom';
 import { 
   Search, 
   Filter, 
@@ -17,8 +16,10 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
-  ArrowUpRight
+  Copy,
+  AlertCircle
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Property {
   id: string;
@@ -61,53 +62,13 @@ const AdminProperties: React.FC = () => {
   const [propertyToUpdateStatus, setPropertyToUpdateStatus] = useState<Property | null>(null);
   const [newStatus, setNewStatus] = useState<string>('');
   const [statusReason, setStatusReason] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'pending' | 'rejected'>('all');
-  
-  // Stats counters
-  const [pendingCount, setPendingCount] = useState(0);
-  const [activeCount, setActiveCount] = useState(0);
-  const [rejectedCount, setRejectedCount] = useState(0);
+  const [showStatusGuidance, setShowStatusGuidance] = useState(true);
 
   const propertiesPerPage = 10;
 
   useEffect(() => {
     fetchProperties();
-    fetchStatusCounts();
-  }, [currentPage, propertyTypeFilter, listingTypeFilter, statusFilter, activeTab]);
-
-  const fetchStatusCounts = async () => {
-    try {
-      // Fetch pending count
-      const { count: pendingCount, error: pendingError } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
-        
-      if (pendingError) throw pendingError;
-      setPendingCount(pendingCount || 0);
-      
-      // Fetch active count
-      const { count: activeCount, error: activeError } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
-        
-      if (activeError) throw activeError;
-      setActiveCount(activeCount || 0);
-      
-      // Fetch rejected count
-      const { count: rejectedCount, error: rejectedError } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'rejected');
-        
-      if (rejectedError) throw rejectedError;
-      setRejectedCount(rejectedCount || 0);
-      
-    } catch (error) {
-      console.error('Error fetching status counts:', error);
-    }
-  };
+  }, [currentPage, propertyTypeFilter, listingTypeFilter, statusFilter]);
 
   const fetchProperties = async () => {
     setLoading(true);
@@ -117,25 +78,17 @@ const AdminProperties: React.FC = () => {
         .from('properties')
         .select('*', { count: 'exact' });
       
-      // Apply tab filtering (this takes precedence over other status filters)
-      if (activeTab === 'active') {
-        query = query.eq('status', 'active');
-      } else if (activeTab === 'pending') {
-        query = query.eq('status', 'pending');
-      } else if (activeTab === 'rejected') {
-        query = query.eq('status', 'rejected');
-      } else if (statusFilter) {
-        // Only apply manual status filter if not using the tabs
-        query = query.eq('status', statusFilter);
-      }
-      
-      // Apply other filters
+      // Apply filters
       if (propertyTypeFilter) {
         query = query.eq('type', propertyTypeFilter);
       }
       
       if (listingTypeFilter) {
         query = query.eq('listing_type', listingTypeFilter);
+      }
+      
+      if (statusFilter) {
+        query = query.eq('status', statusFilter);
       }
       
       // Apply search if provided
@@ -283,7 +236,6 @@ const AdminProperties: React.FC = () => {
       
       // Refresh the property list
       fetchProperties();
-      fetchStatusCounts();
       
       // Close the modal
       setIsDeleteModalOpen(false);
@@ -338,44 +290,8 @@ const AdminProperties: React.FC = () => {
         throw error;
       }
       
-      // Create a notification for the property owner if status changed to approved or rejected
-      if (newStatus === 'active' || newStatus === 'rejected') {
-        const notificationTitle = newStatus === 'active' 
-          ? 'Prona u aprovua!' 
-          : 'Prona u refuzua';
-          
-        const notificationMessage = statusReason || 
-          (newStatus === 'active' 
-            ? 'Prona juaj u aprovua dhe tani është aktive në platformë.' 
-            : 'Prona juaj u refuzua. Ju lutem kontaktoni administratorin për më shumë informacion.');
-            
-        const notificationType = newStatus === 'active' ? 'approval' : 'rejection';
-        
-        // Check if notifications table exists before trying to insert
-        try {
-          const { data, error: notificationError } = await supabase
-            .from('notifications')
-            .insert({
-              user_id: propertyToUpdateStatus.owner_id,
-              title: notificationTitle,
-              message: notificationMessage,
-              type: notificationType,
-              property_id: propertyToUpdateStatus.id
-            });
-            
-          if (notificationError) {
-            console.error('Error creating notification:', notificationError);
-            // Continue anyway since the status was updated
-          }
-        } catch (notifError) {
-          console.error('Exception creating notification:', notifError);
-          // Notification error shouldn't prevent status update
-        }
-      }
-      
       // Refresh the property list
       fetchProperties();
-      fetchStatusCounts();
       
       // Close the modal
       setIsStatusModalOpen(false);
@@ -387,12 +303,6 @@ const AdminProperties: React.FC = () => {
       alert('Ndodhi një gabim gjatë ndryshimit të statusit të pronës');
     }
   };
-  
-  const handleTabChange = (tab: 'all' | 'active' | 'pending' | 'rejected') => {
-    setActiveTab(tab);
-    setCurrentPage(1); // Reset to page 1 when changing tabs
-    setStatusFilter(''); // Clear manual status filter when changing tabs
-  };
 
   return (
     <AdminLayout>
@@ -403,75 +313,39 @@ const AdminProperties: React.FC = () => {
         </p>
       </div>
       
-      {/* Status tabs */}
-      <div className="px-4 sm:px-6 mb-6">
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex -mb-px">
-            <button
-              onClick={() => handleTabChange('all')}
-              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
-                activeTab === 'all'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
-              }`}
+      {/* Status guidance notice */}
+      {showStatusGuidance && (
+        <div className="mb-6 px-4 sm:px-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 relative">
+            <button 
+              onClick={() => setShowStatusGuidance(false)} 
+              className="absolute top-2 right-2 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
             >
-              Të gjitha pronat
+              <X className="h-4 w-4" />
             </button>
-            
-            <button
-              onClick={() => handleTabChange('active')}
-              className={`py-4 px-6 text-center border-b-2 font-medium text-sm flex items-center ${
-                activeTab === 'active'
-                  ? 'border-green-500 text-green-600 dark:text-green-400 dark:border-green-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
-              }`}
-            >
-              <div className="relative">
-                Të publikuara
-                <span className="absolute -top-2 -right-2 inline-flex items-center justify-center px-2 py-1 text-xs leading-none text-green-800 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-300">
-                  {activeCount}
-                </span>
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-blue-400" aria-hidden="true" />
               </div>
-            </button>
-            
-            <button
-              onClick={() => handleTabChange('pending')}
-              className={`py-4 px-6 text-center border-b-2 font-medium text-sm flex items-center ${
-                activeTab === 'pending'
-                  ? 'border-yellow-500 text-yellow-600 dark:text-yellow-400 dark:border-yellow-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
-              }`}
-            >
-              <div className="relative">
-                Në pritje
-                {pendingCount > 0 && (
-                  <span className="absolute -top-2 -right-2 inline-flex items-center justify-center px-2 py-1 text-xs leading-none text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-300">
-                    {pendingCount}
-                  </span>
-                )}
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                  Filtrat për statuse të pronave
+                </h3>
+                <div className="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>Për pronat që presin aprovim, filtro me statusin "Në pritje"</li>
+                    <li>Për pronat e aprovuara, filtro me statusin "Aktiv"</li>
+                    <li>Për pronat e refuzuara, filtro me statusin "Refuzuar"</li>
+                  </ul>
+                </div>
+                <p className="mt-2 text-sm text-blue-700 dark:text-blue-400">
+                  Për të parë detajet e plotë të një prone, kliko në "Shiko" te veprimet e pronës.
+                </p>
               </div>
-            </button>
-            
-            <button
-              onClick={() => handleTabChange('rejected')}
-              className={`py-4 px-6 text-center border-b-2 font-medium text-sm flex items-center ${
-                activeTab === 'rejected'
-                  ? 'border-red-500 text-red-600 dark:text-red-400 dark:border-red-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
-              }`}
-            >
-              <div className="relative">
-                Të refuzuara
-                {rejectedCount > 0 && (
-                  <span className="absolute -top-2 -right-2 inline-flex items-center justify-center px-2 py-1 text-xs leading-none text-red-800 bg-red-100 rounded-full dark:bg-red-900 dark:text-red-300">
-                    {rejectedCount}
-                  </span>
-                )}
-              </div>
-            </button>
-          </nav>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
       
       {/* Filters and search */}
       <div className="mb-6 px-4 sm:px-6">
@@ -523,6 +397,26 @@ const AdminProperties: React.FC = () => {
                   <option value="">Të gjitha</option>
                   <option value="sale">Në shitje</option>
                   <option value="rent">Me qira</option>
+                </select>
+              </div>
+              
+              <div className="flex items-center">
+                <Building className="h-5 w-5 text-gray-400 mr-2" />
+                <select
+                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-3 pr-8 focus:ring-blue-500 focus:border-blue-500"
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="">Të gjitha statuset</option>
+                  <option value="pending">Në pritje</option>
+                  <option value="active">Aktive</option>
+                  <option value="inactive">Joaktive</option>
+                  <option value="rejected">Refuzuar</option>
+                  <option value="sold">Shitur</option>
+                  <option value="rented">Dhënë me qira</option>
                 </select>
               </div>
             </div>
@@ -578,8 +472,7 @@ const AdminProperties: React.FC = () => {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {properties.map((property) => (
                   <tr key={property.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                    property.status === 'pending' ? 'bg-yellow-50 dark:bg-yellow-900/20' : 
-                    property.status === 'rejected' ? 'bg-red-50 dark:bg-red-900/20' : ''
+                    property.status === 'pending' ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''
                   }`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -657,21 +550,12 @@ const AdminProperties: React.FC = () => {
                       {formatDate(property.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Link
-                          to={`/admin/properties/${property.id}`}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          <Eye className="h-5 w-5" />
-                        </Link>
-                        
-                        <button
-                          onClick={() => setShowPropertyMenu(showPropertyMenu === property.id ? null : property.id)}
-                          className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-                        >
-                          <MoreHorizontal className="h-5 w-5" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => setShowPropertyMenu(showPropertyMenu === property.id ? null : property.id)}
+                        className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                      >
+                        <MoreHorizontal className="h-5 w-5" />
+                      </button>
                       
                       {showPropertyMenu === property.id && (
                         <div className="absolute right-6 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
@@ -681,8 +565,20 @@ const AdminProperties: React.FC = () => {
                               className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center"
                             >
                               <Eye className="h-4 w-4 mr-2" />
-                              Shiko detaje
+                              Shiko
                             </Link>
+                            
+                            <button
+                              className="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center"
+                              onClick={() => {
+                                // Open edit property modal
+                                alert('Funksioni i editimit do të implementohet së shpejti');
+                                setShowPropertyMenu(null);
+                              }}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edito
+                            </button>
                             
                             {property.status === 'pending' && (
                               <>
