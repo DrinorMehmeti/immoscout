@@ -28,19 +28,19 @@ const AdminLogin: React.FC = () => {
     
     try {
       // First, attempt to log in the user
-      const success = await login(email, password);
+      const { success, userId } = await login(email, password);
       
-      if (!success) {
+      if (!success || !userId) {
         setError('Email ose fjalëkalimi i gabuar');
         setIsLoading(false);
         return;
       }
       
-      // Check if the logged in user is an admin
+      // Check if the logged in user is an admin using the userId returned from login
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_admin')
-        .eq('id', authState.user?.id)
+        .eq('id', userId)
         .single();
         
       if (profileError) {
