@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import HomepageProperties from './components/HomepageProperties';
@@ -16,6 +16,7 @@ import MyPropertiesPage from './pages/MyPropertiesPage';
 import PremiumPage from './pages/PremiumPage';
 import AddPropertyPage from './pages/AddPropertyPage';
 import PropertyDetail from './pages/PropertyDetail';
+import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminProperties from './pages/admin/AdminProperties';
@@ -211,45 +212,58 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { authState } = useAuth();
   const navigate = useNavigate();
-
-  // In a real app you'd check for admin role
-  // This is a placeholder for demonstration
-  const isAdmin = authState.isAuthenticated;
+  const location = useLocation();
 
   useEffect(() => {
-    if (!isAdmin && !authState.isLoading) {
-      navigate('/login');
+    // If the user is not authenticated, or is still loading auth state
+    if (!authState.isAuthenticated && !authState.isLoading) {
+      navigate('/admin/login');
+      return;
     }
-  }, [isAdmin, authState.isLoading, navigate]);
+    
+    // If the user is authenticated but not an admin
+    if (authState.isAuthenticated && !authState.isLoading && !authState.user?.profile?.is_admin) {
+      navigate('/admin/login');
+    }
+  }, [authState, navigate]);
 
   if (authState.isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
-  return isAdmin ? <>{children}</> : null;
+  return (authState.isAuthenticated && authState.user?.profile?.is_admin) ? <>{children}</> : null;
 };
 
 function App() {
   const { authState } = useAuth();
   const { darkMode } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Redirect authenticated users away from auth pages
   useEffect(() => {
     if (authState.isAuthenticated) {
-      const path = window.location.pathname;
+      const path = location.pathname;
       if (path === '/login' || path === '/register') {
         navigate('/dashboard');
       }
     }
-  }, [authState.isAuthenticated, navigate]);
+  }, [authState.isAuthenticated, navigate, location.pathname]);
+
+  // Determine if we should show the navbar and footer
+  const isAdminPath = location.pathname.startsWith('/admin');
+  const isAdminLogin = location.pathname === '/admin/login';
 
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
-      {/* Don't show navbar on admin pages */}
-      {!window.location.pathname.startsWith('/admin') && <Navbar />}
+      {/* Don't show navbar on admin pages or admin login */}
+      {!isAdminPath && <Navbar />}
       
-      <main className={`flex-grow ${!window.location.pathname.startsWith('/admin') ? 'pt-16' : ''}`}>
+      <main className={`flex-grow ${!isAdminPath && !isAdminLogin ? 'pt-16' : ''}`}>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
@@ -257,6 +271,9 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/listings" element={<ListingsPage />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
+          
+          {/* Admin login route */}
+          <Route path="/admin/login" element={<AdminLogin />} />
           
           {/* Protected routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -275,8 +292,8 @@ function App() {
         </Routes>
       </main>
       
-      {/* Don't show footer on admin pages */}
-      {!window.location.pathname.startsWith('/admin') && <Footer />}
+      {/* Don't show footer on admin pages or admin login*/}
+      {!isAdminPath && <Footer />}
     </div>
   );
 }

@@ -35,9 +35,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const isAdmin = authState.user?.profile?.is_admin === true;
   
   useEffect(() => {
-    // If not admin, redirect to home page
+    // If not admin, redirect to admin login page
     if (!isAdmin && !authState.isLoading) {
-      navigate('/');
+      navigate('/admin/login');
     }
   }, [isAdmin, authState.isLoading, navigate]);
 
@@ -54,6 +54,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   if (!isAdmin) {
     return null;
   }
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/admin/login');
+  };
 
   return (
     <div className={`h-screen flex overflow-hidden ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
@@ -179,7 +184,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 </p>
                 <div className="flex items-center">
                   <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-500 flex items-center"
                   >
                     <LogOut className="mr-1 h-3 w-3" />
@@ -294,7 +299,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     </p>
                     <div className="flex items-center">
                       <button
-                        onClick={logout}
+                        onClick={handleLogout}
                         className="text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-500 flex items-center"
                       >
                         <LogOut className="mr-1 h-3 w-3" />
@@ -379,7 +384,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                         Kthehu në faqe
                       </Link>
                       <button
-                        onClick={logout}
+                        onClick={handleLogout}
                         className="w-full text-left block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                         role="menuitem"
                       >
