@@ -15,7 +15,11 @@ import {
   Euro,
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Clock,
+  CircleCheck,
+  CircleX,
+  CirclePause
 } from 'lucide-react';
 
 interface Property {
@@ -36,7 +40,7 @@ interface Property {
   status: string;
   featured: boolean;
   owner_id: string;
-  owner_name?: string; // Changed from profiles?.name
+  owner_name?: string;
   view_count?: number;
   favorite_count?: number;
 }
@@ -48,6 +52,7 @@ const AdminProperties: React.FC = () => {
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<string>('');
   const [listingTypeFilter, setListingTypeFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'pending' | 'rejected'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showPropertyMenu, setShowPropertyMenu] = useState<string | null>(null);
@@ -61,6 +66,20 @@ const AdminProperties: React.FC = () => {
   const [statusReason, setStatusReason] = useState<string>('');
 
   const propertiesPerPage = 10;
+
+  useEffect(() => {
+    // When tab changes, update the statusFilter and reset to page 1
+    if (activeTab === 'active') {
+      setStatusFilter('active');
+    } else if (activeTab === 'pending') {
+      setStatusFilter('pending');
+    } else if (activeTab === 'rejected') {
+      setStatusFilter('rejected');
+    } else {
+      setStatusFilter('');
+    }
+    setCurrentPage(1);
+  }, [activeTab]);
 
   useEffect(() => {
     fetchProperties();
@@ -286,6 +305,29 @@ const AdminProperties: React.FC = () => {
         throw error;
       }
       
+      // If reason is provided and this is a rejection, add a notification
+      if (statusReason && (newStatus === 'rejected' || newStatus === 'active')) {
+        const notificationType = newStatus === 'rejected' ? 'rejection' : 'approval';
+        const notificationTitle = newStatus === 'rejected' ? 'Prona juaj u refuzua' : 'Prona juaj u aprovua';
+        
+        // Check if notifications table exists before trying to insert
+        const { error: tableCheckError } = await supabase
+          .from('notifications')
+          .select('id')
+          .limit(1);
+        
+        // Only add notification if table exists
+        if (!tableCheckError) {
+          await supabase.from('notifications').insert({
+            user_id: propertyToUpdateStatus.owner_id,
+            title: notificationTitle,
+            message: statusReason || (newStatus === 'rejected' ? 'Prona juaj u refuzua nga administratori.' : 'Prona juaj u aprovua dhe është tani e publikuar.'),
+            type: notificationType,
+            property_id: propertyToUpdateStatus.id
+          });
+        }
+      }
+      
       // Refresh the property list
       fetchProperties();
       
@@ -307,6 +349,60 @@ const AdminProperties: React.FC = () => {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Shikoni dhe menaxhoni pronat e platformës
         </p>
+      </div>
+      
+      {/* Status Tabs */}
+      <div className="px-4 sm:px-6 mb-4">
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="-mb-px flex space-x-6">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'all'
+                  ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              Të gjitha pronat
+            </button>
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center ${
+                activeTab === 'active'
+                  ? 'border-green-500 text-green-600 dark:border-green-400 dark:text-green-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <CircleCheck className={`h-4 w-4 mr-1 ${activeTab === 'active' ? 'text-green-500' : ''}`} />
+              Të publikuara
+            </button>
+            <button
+              onClick={() => setActiveTab('pending')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center ${
+                activeTab === 'pending'
+                  ? 'border-yellow-500 text-yellow-600 dark:border-yellow-400 dark:text-yellow-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <Clock className={`h-4 w-4 mr-1 ${activeTab === 'pending' ? 'text-yellow-500' : ''}`} />
+              Në pritje
+              <span className="ml-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 text-xs font-medium rounded-full px-2 py-0.5">
+                {properties.filter(p => p.status === 'pending').length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('rejected')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center ${
+                activeTab === 'rejected'
+                  ? 'border-red-500 text-red-600 dark:border-red-400 dark:text-red-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <CircleX className={`h-4 w-4 mr-1 ${activeTab === 'rejected' ? 'text-red-500' : ''}`} />
+              Të refuzuara
+            </button>
+          </nav>
+        </div>
       </div>
       
       {/* Filters and search */}
@@ -361,26 +457,6 @@ const AdminProperties: React.FC = () => {
                   <option value="rent">Me qira</option>
                 </select>
               </div>
-              
-              <div className="flex items-center">
-                <Building className="h-5 w-5 text-gray-400 mr-2" />
-                <select
-                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-3 pr-8 focus:ring-blue-500 focus:border-blue-500"
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value="">Të gjitha statuset</option>
-                  <option value="pending">Në pritje</option>
-                  <option value="active">Aktive</option>
-                  <option value="inactive">Joaktive</option>
-                  <option value="rejected">Refuzuar</option>
-                  <option value="sold">Shitur</option>
-                  <option value="rented">Dhënë me qira</option>
-                </select>
-              </div>
             </div>
           </div>
         </div>
@@ -397,7 +473,10 @@ const AdminProperties: React.FC = () => {
             <Building className="h-12 w-12 text-gray-400 mx-auto mb-3" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Nuk u gjet asnjë pronë</h3>
             <p className="mt-1 text-gray-500 dark:text-gray-400">
-              Provoni të ndryshoni filtrat ose termit e kërkimit
+              {activeTab === 'all' ? 'Provoni të ndryshoni filtrat ose termit e kërkimit' : 
+               activeTab === 'pending' ? 'Nuk ka prona në pritje për aprovim' : 
+               activeTab === 'rejected' ? 'Nuk ka prona të refuzuara' : 
+               'Nuk ka prona të publikuara'}
             </p>
           </div>
         ) : (
@@ -434,7 +513,8 @@ const AdminProperties: React.FC = () => {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {properties.map((property) => (
                   <tr key={property.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                    property.status === 'pending' ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''
+                    property.status === 'pending' ? 'bg-yellow-50 dark:bg-yellow-900/20' : 
+                    property.status === 'rejected' ? 'bg-red-50 dark:bg-red-900/20' : ''
                   }`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -900,18 +980,19 @@ const AdminProperties: React.FC = () => {
                 </div>
               )}
               
-              {(newStatus === 'rejected' || newStatus === '') && (
+              {(newStatus === 'rejected' || newStatus === 'active') && (
                 <div className="mb-4">
                   <label htmlFor="reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Arsyeja (opsionale)
+                    {newStatus === 'rejected' ? 'Arsyeja e refuzimit' : 'Komente shtesë (opsionale)'}
                   </label>
                   <textarea
                     id="reason"
                     className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 px-3 focus:ring-blue-500 focus:border-blue-500"
                     rows={3}
-                    placeholder="Shënoni arsyen për ndryshimin e statusit..."
+                    placeholder={newStatus === 'rejected' ? "Shënoni arsyen për refuzimin..." : "Komente shtesë për pronarin..."}
                     value={statusReason}
                     onChange={(e) => setStatusReason(e.target.value)}
+                    required={newStatus === 'rejected'}
                   ></textarea>
                 </div>
               )}
@@ -939,7 +1020,7 @@ const AdminProperties: React.FC = () => {
                         : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
                   }`}
                   onClick={handleUpdateStatus}
-                  disabled={!newStatus}
+                  disabled={!newStatus || (newStatus === 'rejected' && !statusReason)}
                 >
                   {newStatus === 'active' ? 'Aprovo' : 
                    newStatus === 'rejected' ? 'Refuzo' : 
