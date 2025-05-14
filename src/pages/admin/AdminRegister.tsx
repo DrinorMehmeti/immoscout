@@ -55,13 +55,13 @@ const AdminRegister: React.FC = () => {
         throw new Error('Regjistrimi dështoi');
       }
       
-      // Create profile with admin rights
+      // Create profile with admin rights - using 'seller' as user_type to satisfy the check constraint
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
           id: authData.user.id,
           name,
-          user_type: 'admin', // Special user type for admins
+          user_type: 'seller', // Using a valid user_type from the constraint
           is_premium: false,
           is_admin: true, // Set as admin
           personal_id: `ADMIN-${Math.random().toString(36).substring(2, 8)}`
