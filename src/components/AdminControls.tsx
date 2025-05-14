@@ -46,10 +46,11 @@ const AdminControls: React.FC<AdminControlsProps> = ({ onUserUpdated }) => {
           break;
 
         case 'email':
-          functionName = 'set_admin_by_email';
+          // Use set_admin_by_uuid_or_email function instead to avoid ambiguity
+          functionName = 'set_admin_by_uuid_or_email';
           const { data: emailResult, error: emailError } = await supabase.rpc(
-            'set_admin_by_email',
-            { user_email: inputValue }
+            'set_admin_by_uuid_or_email',
+            { identifier: inputValue, is_email: true }
           );
           
           if (emailError) throw emailError;
@@ -57,10 +58,10 @@ const AdminControls: React.FC<AdminControlsProps> = ({ onUserUpdated }) => {
           break;
 
         case 'uuid':
-          functionName = 'set_admin_by_uuid';
+          functionName = 'set_admin_by_uuid_or_email';
           const { data: uuidResult, error: uuidError } = await supabase.rpc(
-            'set_admin_by_uuid',
-            { user_id: inputValue }
+            'set_admin_by_uuid_or_email',
+            { identifier: inputValue, is_email: false }
           );
           
           if (uuidError) throw uuidError;
