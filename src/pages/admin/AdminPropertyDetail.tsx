@@ -24,7 +24,8 @@ import {
   MessageSquare,
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Copy
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -51,6 +52,7 @@ interface Property {
     email?: string;
     user_type: string;
     is_premium: boolean;
+    personal_id: string;
   };
   view_count?: number;
   favorite_count?: number;
@@ -64,6 +66,7 @@ const AdminPropertyDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [copiedId, setCopiedId] = useState(false);
   
   // Modals state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -97,7 +100,7 @@ const AdminPropertyDetail: React.FC = () => {
         // Fetch owner details
         const { data: ownerData, error: ownerError } = await supabase
           .from('profiles')
-          .select('name, user_type, is_premium')
+          .select('name, user_type, is_premium, personal_id')
           .eq('id', propertyData.owner_id)
           .single();
           
@@ -321,6 +324,15 @@ const AdminPropertyDetail: React.FC = () => {
       minute: '2-digit'
     });
   };
+
+  // Copy personal ID to clipboard
+  const copyPersonalId = () => {
+    if (property?.owner?.personal_id) {
+      navigator.clipboard.writeText(property.owner.personal_id);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    }
+  };
   
   if (loading) {
     return (
@@ -488,11 +500,32 @@ const AdminPropertyDetail: React.FC = () => {
                     </p>
                   </div>
                 </div>
+                
                 <div className="mt-3 flex items-center justify-between text-sm">
                   <span className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>ID:</span>
                   <span className={`font-mono ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     {property.owner_id.substring(0, 8)}...
                   </span>
+                </div>
+                
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <span className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>ID Personale:</span>
+                  <div className="flex items-center">
+                    <span className={`font-mono bg-gray-100 dark:bg-gray-600 px-2 py-0.5 rounded ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                      {property.owner?.personal_id || 'N/A'}
+                    </span>
+                    <button 
+                      onClick={copyPersonalId}
+                      className="ml-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                      title="Kopjo ID-në"
+                    >
+                      {copiedId ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

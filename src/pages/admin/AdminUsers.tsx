@@ -11,7 +11,8 @@ import {
   ShieldCheck, 
   ShieldOff, 
   Mail,
-  EyeOff
+  EyeOff,
+  Copy
 } from 'lucide-react';
 
 interface UserProfile {
@@ -24,6 +25,7 @@ interface UserProfile {
   created_at: string;
   updated_at: string;
   email?: string;
+  personal_id: string;
 }
 
 const AdminUsers: React.FC = () => {
@@ -39,6 +41,7 @@ const AdminUsers: React.FC = () => {
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [userToTogglePremium, setUserToTogglePremium] = useState<UserProfile | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const usersPerPage = 10;
 
@@ -181,6 +184,13 @@ const AdminUsers: React.FC = () => {
     }
   };
 
+  const copyPersonalId = (userId: string, personalId: string) => {
+    navigator.clipboard.writeText(personalId).then(() => {
+      setCopiedId(userId);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
   return (
     <AdminLayout>
       <div className="px-4 py-5 sm:px-6">
@@ -270,7 +280,7 @@ const AdminUsers: React.FC = () => {
                     Përdoruesi
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    ID
+                    ID Personale
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Lloji
@@ -298,12 +308,28 @@ const AdminUsers: React.FC = () => {
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
                             {user.name}
                           </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            ID: {user.id.slice(0, 8)}...
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {user.id.slice(0, 8)}...
+                      <div className="flex items-center">
+                        <div className="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-blue-600 dark:text-blue-400">
+                          {user.personal_id}
+                        </div>
+                        <button 
+                          onClick={() => copyPersonalId(user.id, user.personal_id)}
+                          className="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          title="Kopjo ID-në"
+                        >
+                          {copiedId === user.id ? (
+                            <span className="text-green-500 text-xs">Kopjuar!</span>
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
