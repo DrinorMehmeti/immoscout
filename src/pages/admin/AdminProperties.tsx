@@ -17,7 +17,8 @@ import {
   CheckCircle,
   XCircle,
   Copy,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
