@@ -31,11 +31,10 @@ const AdminControls: React.FC<AdminControlsProps> = ({ onUserUpdated }) => {
 
     try {
       let success = false;
-      let functionName = '';
 
       switch (method) {
         case 'personal_id':
-          functionName = 'set_user_as_admin';
+          // Use the RPC function for personal_id
           const { data: personalIdResult, error: personalIdError } = await supabase.rpc(
             'set_user_as_admin',
             { user_personal_id: inputValue }
@@ -46,26 +45,45 @@ const AdminControls: React.FC<AdminControlsProps> = ({ onUserUpdated }) => {
           break;
 
         case 'email':
-          // Use set_admin_by_uuid_or_email function instead to avoid ambiguity
-          functionName = 'set_admin_by_uuid_or_email';
-          const { data: emailResult, error: emailError } = await supabase.rpc(
-            'set_admin_by_uuid_or_email',
-            { identifier: inputValue, is_email: true }
-          );
+          // For email, we'll use a direct query approach since the RPC function has issues
+          const { data: userByEmail, error: emailLookupError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', inputValue)
+            .maybeSingle();
           
-          if (emailError) throw emailError;
-          success = emailResult;
+          if (emailLookupError) throw emailLookupError;
+          
+          if (userByEmail) {
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ is_admin: true })
+              .eq('id', userByEmail.id);
+            
+            if (updateError) throw updateError;
+            success = true;
+          } else {
+            success = false;
+          }
           break;
 
         case 'uuid':
-          functionName = 'set_admin_by_uuid_or_email';
-          const { data: uuidResult, error: uuidError } = await supabase.rpc(
-            'set_admin_by_uuid_or_email',
-            { identifier: inputValue, is_email: false }
-          );
+          // For UUID, directly update the profile
+          const { error: uuidError } = await supabase
+            .from('profiles')
+            .update({ is_admin: true })
+            .eq('id', inputValue);
           
           if (uuidError) throw uuidError;
-          success = uuidResult;
+          
+          // Check if any rows were affected
+          const { count, error: countError } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('id', inputValue);
+          
+          if (countError) throw countError;
+          success = count ? count > 0 : false;
           break;
       }
 
@@ -102,13 +120,18 @@ const AdminControls: React.FC<AdminControlsProps> = ({ onUserUpdated }) => {
     setResult(null);
 
     try {
-      const { data, error } = await supabase.rpc('update_all_seller_landlord_to_admin');
+      // Direct SQL approach since the RPC function has issues
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ is_admin: true })
+        .in('user_type', ['seller', 'landlord'])
+        .select();
       
       if (error) throw error;
       
       setResult({
         success: true,
-        message: `${data} përdorues u bënë administratorë me sukses!`
+        message: `${data?.length || 0} përdorues u bënë administratorë me sukses!`
       });
       
       // Call onUserUpdated to refresh user list if needed

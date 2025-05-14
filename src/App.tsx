@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Link, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import HomepageProperties from './components/HomepageProperties';
@@ -16,12 +16,11 @@ import MyPropertiesPage from './pages/MyPropertiesPage';
 import PremiumPage from './pages/PremiumPage';
 import AddPropertyPage from './pages/AddPropertyPage';
 import PropertyDetail from './pages/PropertyDetail';
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminRegister from './pages/admin/AdminRegister';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminProperties from './pages/admin/AdminProperties';
 import AdminPropertyDetail from './pages/admin/AdminPropertyDetail';
+import AdminLogin from './pages/admin/AdminLogin';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 
 // The main app content for non-authenticated users
@@ -50,7 +49,7 @@ const LandingPage = () => {
               <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-4">
                 <Building className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Gjetja e pronës ideale</h3>
+              <h3 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Gjetja e pronës ideale</h3>
               <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 Përdorni filtrat tanë të avancuar për të gjetur pikërisht atë që po kërkoni, qoftë për blerje apo qira.
               </p>
@@ -74,7 +73,7 @@ const LandingPage = () => {
               <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-4">
                 <Home className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Shitni apo jepni me qira</h3>
+              <h3 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Shitni apo jepni me qira</h3>
               <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 Shtoni pronat tuaja për ti parë mijëra blerës dhe qiramarrës potencialë çdo ditë.
               </p>
@@ -98,7 +97,7 @@ const LandingPage = () => {
               <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-4">
                 <Star className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Bëhuni premium</h3>
+              <h3 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Bëhuni premium</h3>
               <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 Shpalljet tuaja në krye të listës dhe përparësi ndaj të tjerëve me abonim premium.
               </p>
@@ -214,58 +213,53 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { authState } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
+
+  // Check for admin role
+  const isAdmin = authState.isAuthenticated && authState.user?.profile?.is_admin;
 
   useEffect(() => {
-    // If the user is not authenticated, or is still loading auth state
-    if (!authState.isAuthenticated && !authState.isLoading) {
+    if (authState.isLoading) {
+      return; // Wait until loading is complete
+    }
+    
+    if (!authState.isAuthenticated) {
       navigate('/admin/login');
       return;
     }
     
-    // If the user is authenticated but not an admin
-    if (authState.isAuthenticated && !authState.isLoading && !authState.user?.profile?.is_admin) {
-      navigate('/admin/login');
+    if (!isAdmin) {
+      navigate('/');
     }
-  }, [authState, navigate]);
+  }, [authState.isAuthenticated, isAdmin, authState.isLoading, navigate]);
 
   if (authState.isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
-  return (authState.isAuthenticated && authState.user?.profile?.is_admin) ? <>{children}</> : null;
+  return isAdmin ? <>{children}</> : null;
 };
 
 function App() {
   const { authState } = useAuth();
   const { darkMode } = useTheme();
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Redirect authenticated users away from auth pages
   useEffect(() => {
     if (authState.isAuthenticated) {
-      const path = location.pathname;
+      const path = window.location.pathname;
       if (path === '/login' || path === '/register') {
         navigate('/dashboard');
       }
     }
-  }, [authState.isAuthenticated, navigate, location.pathname]);
-
-  // Determine if we should show the navbar and footer
-  const isAdminPath = location.pathname.startsWith('/admin');
-  const isAdminLogin = location.pathname === '/admin/login';
+  }, [authState.isAuthenticated, navigate]);
 
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
-      {/* Don't show navbar on admin pages or admin login */}
-      {!isAdminPath && <Navbar />}
+      {/* Don't show navbar on admin pages */}
+      {!window.location.pathname.startsWith('/admin') && <Navbar />}
       
-      <main className={`flex-grow ${!isAdminPath && !isAdminLogin ? 'pt-16' : ''}`}>
+      <main className={`flex-grow ${!window.location.pathname.startsWith('/admin') ? 'pt-16' : ''}`}>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
@@ -274,10 +268,6 @@ function App() {
           <Route path="/listings" element={<ListingsPage />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           
-          {/* Admin login and register routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/register" element={<AdminRegister />} />
-          
           {/* Protected routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/my-properties" element={<ProtectedRoute><MyPropertiesPage /></ProtectedRoute>} />
@@ -285,6 +275,7 @@ function App() {
           <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
           
           {/* Admin routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
           <Route path="/admin/properties" element={<AdminRoute><AdminProperties /></AdminRoute>} />
@@ -296,8 +287,8 @@ function App() {
         </Routes>
       </main>
       
-      {/* Don't show footer on admin pages or admin login*/}
-      {!isAdminPath && <Footer />}
+      {/* Don't show footer on admin pages */}
+      {!window.location.pathname.startsWith('/admin') && <Footer />}
     </div>
   );
 }
