@@ -22,6 +22,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminProperties from './pages/admin/AdminProperties';
 import AdminPropertyDetail from './pages/admin/AdminPropertyDetail';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 
 // The main app content for non-authenticated users
 const LandingPage = () => {
@@ -288,6 +289,7 @@ function App() {
           <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
           <Route path="/admin/properties" element={<AdminRoute><AdminProperties /></AdminRoute>} />
           <Route path="/admin/properties/:id" element={<AdminRoute><AdminPropertyDetail /></AdminRoute>} />
+          <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
           
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
