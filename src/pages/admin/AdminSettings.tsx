@@ -13,8 +13,8 @@ import {
   Star, 
   Users, 
   Building, 
-  Bell, A
-  lertTriangle, 
+  Bell, 
+  AlertTriangle, 
   Check,
   Info,
   RotateCcw,
