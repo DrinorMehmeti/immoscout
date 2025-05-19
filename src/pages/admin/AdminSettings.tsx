@@ -20,7 +20,8 @@ import {
   RotateCcw,
   Database,
   Shield,
-  Server
+  Server,
+  Trash2
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
