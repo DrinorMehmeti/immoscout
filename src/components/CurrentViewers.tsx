@@ -22,19 +22,14 @@ const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
       localStorage.setItem('property_viewer_session_id', sessionId);
     }
     
-    // Initial fetch of viewer count and register as viewer
+    // Initial fetch of viewer count
     const fetchViewerCount = async () => {
       try {
         setLoading(true);
         
-        // Register this user as currently viewing
-        await supabase.rpc('register_property_viewer', {
-          p_property_id: propertyId,
-          p_session_id: sessionId
-        });
+        // Note: We've removed the call to register_property_viewer since it doesn't exist
         
         // Get the current viewer count for this property
-        // Updated to match the correct parameter names
         const { data, error } = await supabase
           .rpc('get_property_view_stats', {
             days_param: 30, // Default to 30 days of stats
@@ -46,7 +41,6 @@ const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
         }
         
         // Assuming get_property_view_stats returns an object with a current_viewers field
-        // If the structure is different, this might need adjustment
         setViewerCount(data?.current_viewers || 0);
       } catch (err) {
         console.error('Error fetching viewer count:', err);
@@ -59,7 +53,7 @@ const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
     // Fetch immediately
     fetchViewerCount();
     
-    // Set up interval to refresh and keep session active
+    // Set up interval to refresh
     const intervalId = setInterval(fetchViewerCount, 10000); // Every 10 seconds
     
     // Clean up on unmount
@@ -68,8 +62,8 @@ const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
     };
   }, [propertyId]);
   
-  // Only show if there are more than 1 viewers (more than just the current user)
-  if (loading || error || viewerCount <= 1) {
+  // Only show if there are viewers
+  if (loading || error || viewerCount === 0) {
     return null;
   }
   
