@@ -26,18 +26,22 @@ const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
       try {
         // Insert a view record directly into property_views table
         try {
-          const user = supabase.auth.getUser();
-          const viewer_id = user ? (await user).data.user?.id : null;
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          // Prepare view record with proper RLS considerations
+          const viewRecord = {
+            property_id: propertyId,
+            user_agent: navigator.userAgent
+          };
+          
+          // Only add viewer_id if user is authenticated
+          if (user) {
+            Object.assign(viewRecord, { viewer_id: user.id });
+          }
           
           await supabase
             .from('property_views')
-            .insert([
-              { 
-                property_id: propertyId,
-                viewer_id: viewer_id,
-                user_agent: navigator.userAgent
-              }
-            ])
+            .insert([viewRecord])
             .select();
         } catch (err) {
           console.error('Error registering as viewer:', err);
