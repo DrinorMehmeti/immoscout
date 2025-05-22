@@ -34,10 +34,11 @@ const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
         });
         
         // Get the current viewer count for this property
-        // Using get_property_view_stats instead of count_current_viewers
+        // Updated to match the correct parameter names
         const { data, error } = await supabase
           .rpc('get_property_view_stats', {
-            p_property_id: propertyId
+            days_param: 30, // Default to 30 days of stats
+            property_id_param: propertyId
           });
         
         if (error) {
