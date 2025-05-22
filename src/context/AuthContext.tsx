@@ -18,7 +18,7 @@ interface AuthState {
 
 interface AuthContextType {
   authState: AuthState;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{success: boolean; errorMessage?: string}>;
   register: (name: string, email: string, password: string, userType: string) => Promise<boolean>;
   logout: () => Promise<void>;
 }
@@ -129,7 +129,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{success: boolean; errorMessage?: string}> => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -137,13 +137,22 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       });
       
       if (error) {
-        throw error;
+        let errorMessage = 'Authentication failed. Please try again.';
+        
+        // Provide more specific error messages based on error code/message
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please verify your email address before logging in.';
+        }
+        
+        return { success: false, errorMessage };
       }
       
-      return true;
+      return { success: true };
     } catch (error) {
       console.error('Error logging in:', error);
-      return false;
+      return { success: false, errorMessage: 'An unexpected error occurred. Please try again later.' };
     }
   };
 
