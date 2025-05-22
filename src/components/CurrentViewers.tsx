@@ -10,8 +10,7 @@ interface CurrentViewersProps {
 
 const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
   const { darkMode } = useTheme();
-  const [viewerCount, setViewerCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [viewerCount, setViewerCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
@@ -22,39 +21,42 @@ const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
       localStorage.setItem('property_viewer_session_id', sessionId);
     }
     
-    // Initial fetch of viewer count
-    const fetchViewerCount = async () => {
+    // Function to register this viewer and get count
+    const registerAndGetCount = async () => {
       try {
-        setLoading(true);
-        
-        // Note: We've removed the call to register_property_viewer since it doesn't exist
-        
-        // Get the current viewer count for this property
-        const { data, error } = await supabase
-          .rpc('get_property_view_stats', {
-            days_param: 30, // Default to 30 days of stats
-            property_id_param: propertyId
+        // Try to register this viewer
+        try {
+          await supabase.rpc('register_property_viewer', {
+            p_property_id: propertyId,
+            p_session_id: sessionId
           });
-        
-        if (error) {
-          throw error;
+        } catch (err) {
+          console.error('Error registering as viewer:', err);
+          // Continue anyway to get the count
         }
         
-        // Assuming get_property_view_stats returns an object with a current_viewers field
-        setViewerCount(data?.current_viewers || 0);
+        // Get the current viewer count
+        const { data, error } = await supabase.rpc('count_current_viewers', {
+          p_property_id: propertyId
+        });
+        
+        if (error) throw error;
+        
+        // Update state with viewer count
+        setViewerCount(data || 0);
+        setError(null);
       } catch (err) {
         console.error('Error fetching viewer count:', err);
         setError('Could not get current viewer count');
-      } finally {
-        setLoading(false);
+        setViewerCount(null);
       }
     };
     
-    // Fetch immediately
-    fetchViewerCount();
+    // Register and get count immediately
+    registerAndGetCount();
     
-    // Set up interval to refresh
-    const intervalId = setInterval(fetchViewerCount, 10000); // Every 10 seconds
+    // Set up interval to refresh count and keep session active
+    const intervalId = setInterval(registerAndGetCount, 30000); // Every 30 seconds
     
     // Clean up on unmount
     return () => {
@@ -62,8 +64,8 @@ const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
     };
   }, [propertyId]);
   
-  // Only show if there are viewers
-  if (loading || error || viewerCount === 0) {
+  // Don't show anything while loading or if there's an error or no viewers
+  if (error || viewerCount === null || viewerCount === 0) {
     return null;
   }
   
