@@ -87,49 +87,53 @@ const AdminLogin: React.FC = () => {
     
     try {
       // Attempt to login with the provided credentials
-      const { success, errorMessage } = await login(email, password);
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      if (!success) {
-        setError(errorMessage || 'Invalid email or password. Please try again.');
+      if (authError) {
+        if (authError.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials and try again.');
+        } else {
+          setError(`Authentication error: ${authError.message}`);
+        }
         setIsLoading(false);
         return;
       }
       
-      // Wait for auth state to update after successful login
-      setTimeout(async () => {
-        if (!authState.user || !authState.user.id) {
-          setError('Authentication error. Please try again.');
-          setIsLoading(false);
-          return;
-        }
-        
-        // If login successful, check if the user is an admin
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', authState.user.id)
-          .maybeSingle();
-        
-        if (profileError) {
-          console.error('Error checking admin status:', profileError);
-          setError('Error verifying admin status. Please try again.');
-          // Sign out if there was an error checking admin status
-          await supabase.auth.signOut();
-          setIsLoading(false);
-          return;
-        }
-        
-        if (!profile || !profile.is_admin) {
-          setError('You do not have admin privileges. Access denied.');
-          // Sign out the user if they're not an admin
-          await supabase.auth.signOut();
-          setIsLoading(false);
-          return;
-        }
-        
-        // If we get here, the user is an admin, redirect to admin dashboard
-        navigate('/admin');
-      }, 500);
+      if (!authData.user) {
+        setError('Authentication failed. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check if the user is an admin
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', authData.user.id)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.error('Error checking admin status:', profileError);
+        setError('Error verifying admin status. Please try again.');
+        // Sign out if there was an error checking admin status
+        await supabase.auth.signOut();
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!profile || !profile.is_admin) {
+        setError('You do not have admin privileges. Access denied.');
+        // Sign out the user if they're not an admin
+        await supabase.auth.signOut();
+        setIsLoading(false);
+        return;
+      }
+      
+      // If we get here, the user is an admin, redirect to admin dashboard
+      navigate('/admin');
     } catch (err) {
       console.error('Error during admin login:', err);
       setError('An unexpected error occurred. Please try again later.');
