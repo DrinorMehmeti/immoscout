@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Heart, Share, ArrowLeft, MessageSquare, Eye } from 'lucide-react';
+import { MapPin, Heart, Share, ArrowLeft, MessageSquare, Eye, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Property } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import PropertyDetailAnalytics from '../components/PropertyDetailAnalytics';
 import ContactRequestForm from '../components/ContactRequestForm';
+import CurrentViewers from '../components/CurrentViewers';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -273,6 +274,8 @@ const PropertyDetail: React.FC = () => {
                 <MapPin className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'} mr-1`} />
                 <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{property.location}</span>
               </div>
+              {/* Current viewers count */}
+              {id && <CurrentViewers propertyId={id} />}
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
@@ -429,9 +432,12 @@ const PropertyDetail: React.FC = () => {
 
                 <div className="flex justify-between">
                   <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Në favorite</span>
-                  <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {favoriteCount}
-                  </span>
+                  <div className="flex items-center">
+                    <Heart className={`h-4 w-4 mr-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                    <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {favoriteCount}
+                    </span>
+                  </div>
                 </div>
                 
                 <div className="flex justify-between">
