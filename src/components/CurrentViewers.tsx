@@ -35,15 +35,16 @@ const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
           // Continue anyway to get the count
         }
         
-        // Get the current viewer count
-        const { data, error } = await supabase.rpc('count_current_viewers', {
+        // Get the current viewer count using get_property_view_stats instead of count_current_viewers
+        const { data, error } = await supabase.rpc('get_property_view_stats', {
           p_property_id: propertyId
         });
         
         if (error) throw error;
         
-        // Update state with viewer count
-        setViewerCount(data || 0);
+        // Update state with viewer count - assuming the function returns an object with a current_viewers field
+        // If the structure is different, this might need further adjustment
+        setViewerCount(data?.current_viewers || 0);
         setError(null);
       } catch (err) {
         console.error('Error fetching viewer count:', err);
