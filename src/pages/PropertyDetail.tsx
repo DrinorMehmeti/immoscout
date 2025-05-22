@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Heart, Share, ArrowLeft, MessageSquare, Eye, Users } from 'lucide-react';
+import { MapPin, Heart, Share, ArrowLeft, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Property } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import PropertyDetailAnalytics from '../components/PropertyDetailAnalytics';
-import ContactRequestForm from '../components/ContactRequestForm';
 import CurrentViewers from '../components/CurrentViewers';
 
 const PropertyDetail: React.FC = () => {
@@ -21,7 +20,6 @@ const PropertyDetail: React.FC = () => {
   const [checkingFavorite, setCheckingFavorite] = useState(true);
   const [viewTracked, setViewTracked] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(0);
-  const [showContactForm, setShowContactForm] = useState(false);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -269,16 +267,18 @@ const PropertyDetail: React.FC = () => {
         <div className="mb-8">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{property.title}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{property.title}</h1>
+                {/* Display current viewers component */}
+                {id && <CurrentViewers propertyId={id} />}
+              </div>
               <div className="flex items-center mt-2">
                 <MapPin className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'} mr-1`} />
                 <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{property.location}</span>
               </div>
-              {/* Current viewers count */}
-              {id && <CurrentViewers propertyId={id} />}
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+              <div className="text-3xl font-bold text-blue-600">
                 {formattedPrice} €
                 {property.listing_type === 'rent' && <span className="text-lg font-normal ml-1">/muaj</span>}
               </div>
@@ -432,40 +432,25 @@ const PropertyDetail: React.FC = () => {
 
                 <div className="flex justify-between">
                   <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Në favorite</span>
-                  <div className="flex items-center">
-                    <Heart className={`h-4 w-4 mr-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {favoriteCount}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Shikime</span>
-                  <div className="flex items-center">
-                    <Eye className={`h-4 w-4 mr-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {property.view_count || 0}
-                    </span>
-                  </div>
+                  <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {favoriteCount}
+                  </span>
                 </div>
               </div>
               
               <div className="mt-6 flex space-x-2">
                 <button
                   onClick={handleToggleFavorite}
-                  disabled={checkingFavorite || !authState.isAuthenticated}
+                  disabled={checkingFavorite}
                   className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md ${
-                    !authState.isAuthenticated 
-                      ? `${darkMode ? 'bg-gray-600' : 'bg-gray-200'} cursor-not-allowed opacity-60`
-                      : isFavorite
-                        ? 'bg-pink-100 text-pink-700 border border-pink-300 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800'
-                        : darkMode 
-                          ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    isFavorite
+                      ? 'bg-pink-100 text-pink-700 border border-pink-300'
+                      : darkMode 
+                        ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  <Heart className={`h-5 w-5 mr-2 ${isFavorite ? 'fill-pink-700 dark:fill-pink-400' : ''}`} />
+                  <Heart className={`h-5 w-5 mr-2 ${isFavorite ? 'fill-pink-700' : ''}`} />
                   {isFavorite ? 'Në favorite' : 'Shto në favorite'}
                 </button>
                 
@@ -483,62 +468,35 @@ const PropertyDetail: React.FC = () => {
             
             {/* Contact card */}
             <div className={`mt-6 ${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-md`}>
-              {showContactForm ? (
-                <ContactRequestForm
-                  propertyId={property.id}
-                  ownerId={property.owner_id}
-                  onClose={() => setShowContactForm(false)}
-                />
-              ) : (
-                <>
-                  <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Kontaktoni pronarin</h2>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                        {property.owner_id ? property.owner_id.charAt(0).toUpperCase() : 'U'}
-                      </div>
-                      <div className="ml-4">
-                        <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Pronari</p>
-                        <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Anëtar që nga 2025</p>
-                      </div>
-                    </div>
-                    
-                    <div className="border-t border-b py-4 space-y-4 dark:border-gray-700">
-                      <button 
-                        onClick={() => setShowContactForm(true)}
-                        disabled={!authState.isAuthenticated || isPropertyOwner}
-                        className={`w-full flex items-center justify-center py-3 rounded-md font-medium ${
-                          !authState.isAuthenticated || isPropertyOwner
-                            ? `${darkMode ? 'bg-gray-700 text-gray-500' : 'bg-gray-200 text-gray-500'} cursor-not-allowed`
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                        }`}
-                      >
-                        <MessageSquare className="h-5 w-5 mr-2" />
-                        {isPropertyOwner 
-                          ? 'Kjo është prona juaj' 
-                          : !authState.isAuthenticated 
-                            ? 'Kyçuni për të kontaktuar' 
-                            : 'Kontakto pronarin'}
-                      </button>
-                      
-                      <button className={`w-full ${
-                        darkMode 
-                          ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
-                          : 'bg-white text-blue-600 border border-blue-600 hover:bg-blue-50'
-                        } py-3 rounded-md font-medium`}>
-                        +383 4X XXX XXX
-                      </button>
-                    </div>
-                    
-                    <div className="text-center">
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Tregojini pronarit që e keni parë pronën në <span className="font-medium">RealEstate Kosovo</span>
-                      </p>
-                    </div>
+              <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Kontaktoni pronarin</h2>
+              
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                    {property.owner_id ? property.owner_id.charAt(0).toUpperCase() : 'U'}
                   </div>
-                </>
-              )}
+                  <div className="ml-4">
+                    <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Pronari</p>
+                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Anëtar që nga 2025</p>
+                  </div>
+                </div>
+                
+                <div className="border-t border-b py-4 space-y-4">
+                  <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium">
+                    Kontakto pronarin
+                  </button>
+                  
+                  <button className="w-full bg-white text-blue-600 border border-blue-600 hover:bg-blue-50 py-3 rounded-md font-medium">
+                    +383 4X XXX XXX
+                  </button>
+                </div>
+                
+                <div className="text-center">
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Tregojini pronarit që e keni parë pronën në <span className="font-medium">RealEstate Kosovo</span>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
