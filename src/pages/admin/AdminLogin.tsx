@@ -19,10 +19,25 @@ const AdminLogin: React.FC = () => {
     const checkAdminStatus = async () => {
       if (authState.isAuthenticated && authState.user) {
         // Check if the user is an admin
-        if (authState.user.profile?.is_admin) {
-          navigate('/admin');
-        } else {
-          setError('You do not have admin privileges');
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', authState.user.id)
+            .single();
+            
+          if (profileError) throw profileError;
+          
+          if (profile && profile.is_admin) {
+            navigate('/admin');
+          } else {
+            setError('You do not have admin privileges');
+            // Sign out if not an admin
+            await supabase.auth.signOut();
+          }
+        } catch (err) {
+          console.error('Error checking admin status:', err);
+          setError('Error verifying admin status');
         }
       }
     };
@@ -30,22 +45,55 @@ const AdminLogin: React.FC = () => {
     checkAdminStatus();
   }, [authState.isAuthenticated, authState.user, navigate]);
 
+  // Validate form input
+  const validateForm = () => {
+    if (!email.trim()) {
+      setError('Email is required');
+      return false;
+    }
+    
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
+    
+    if (!password) {
+      setError('Password is required');
+      return false;
+    }
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError(null);
     
+    // Validate the form
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsLoading(true);
+    
     try {
-      // First attempt to login with the provided credentials
+      // Attempt to login with the provided credentials
       const success = await login(email, password);
       
       if (!success) {
-        setError('Invalid login credentials');
+        setError('Invalid email or password. Please try again.');
         setIsLoading(false);
         return;
       }
       
-      // Check if the user is an admin
+      // If login successful, check if the user is an admin
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_admin')
@@ -54,13 +102,15 @@ const AdminLogin: React.FC = () => {
       
       if (profileError) {
         console.error('Error checking admin status:', profileError);
-        setError('Error verifying admin status');
+        setError('Error verifying admin status. Please try again.');
+        // Sign out if there was an error checking admin status
+        await supabase.auth.signOut();
         setIsLoading(false);
         return;
       }
       
       if (!profile || !profile.is_admin) {
-        setError('You do not have admin privileges');
+        setError('You do not have admin privileges. Access denied.');
         // Sign out the user if they're not an admin
         await supabase.auth.signOut();
         setIsLoading(false);
@@ -71,8 +121,7 @@ const AdminLogin: React.FC = () => {
       navigate('/admin');
     } catch (err) {
       console.error('Error during admin login:', err);
-      setError('An unexpected error occurred');
-    } finally {
+      setError('An unexpected error occurred. Please try again later.');
       setIsLoading(false);
     }
   };
