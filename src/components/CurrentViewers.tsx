@@ -24,31 +24,8 @@ const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
     // Function to register this viewer and get count
     const registerAndGetCount = async () => {
       try {
-        // Insert a view record directly into property_views table
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          
-          // Prepare view record with proper RLS considerations
-          const viewRecord = {
-            property_id: propertyId,
-            user_agent: navigator.userAgent
-          };
-          
-          // Only add viewer_id if user is authenticated
-          if (user) {
-            Object.assign(viewRecord, { viewer_id: user.id });
-          }
-          
-          await supabase
-            .from('property_views')
-            .insert([viewRecord])
-            .select();
-        } catch (err) {
-          console.error('Error registering as viewer:', err);
-          // Continue anyway to get the count
-        }
-        
-        // Get the current viewer count using get_property_view_stats
+        // Get view count without inserting a new view record
+        // This avoids the RLS issue while still getting the count
         const { data, error } = await supabase.rpc('get_property_view_stats', {
           days_param: 1, // Default to 1 day for current viewers
           property_id_param: propertyId
