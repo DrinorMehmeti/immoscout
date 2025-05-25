@@ -1,119 +1,181 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { ShoppingBag, Home, Car } from 'lucide-react';
+import { ShoppingBag, Home, Car, Coffee, Gift, Bookmark, Star, CreditCard, Zap } from 'lucide-react';
 
 interface AdvertisementProps {
   position: 'left' | 'right';
 }
 
-// This component creates a visually appealing advertisement that rotates between different themes
 const Advertisement: React.FC<AdvertisementProps> = ({ position }) => {
   const { darkMode } = useTheme();
-  const [adIndex, setAdIndex] = React.useState(0);
+  const [adIndex, setAdIndex] = useState(0);
   
   // Sample advertisement data
   const advertisements = [
     {
-      title: "Bëni shtëpinë tuaj më të bukur",
-      description: "Mobilie të reja me 30% zbritje",
-      icon: <Home className="h-10 w-10" />,
+      title: "Shtëpi të reja",
+      description: "Financim deri në 20 vjet",
+      icon: <Home className="h-8 w-8" />,
       bgColor: "from-blue-500 to-blue-700",
       textColor: "text-white",
-      cta: "Blej tani"
+      cta: "Zbulo më shumë"
     },
     {
-      title: "Vetura të reja në Prishtinë",
-      description: "Financim deri në 7 vjet",
-      icon: <Car className="h-10 w-10" />,
+      title: "Vetura të reja",
+      description: "Financim me 0% interes",
+      icon: <Car className="h-8 w-8" />,
       bgColor: "from-green-500 to-green-700",
       textColor: "text-white",
       cta: "Rezervo test drive"
     },
     {
-      title: "Koleksioni pranveror",
-      description: "Veshjet më të fundit për 2025",
-      icon: <ShoppingBag className="h-10 w-10" />,
+      title: "Premium Kafeja",
+      description: "Blej 2, merr 1 falas",
+      icon: <Coffee className="h-8 w-8" />,
+      bgColor: "from-amber-500 to-amber-700",
+      textColor: "text-white",
+      cta: "Porosit tani"
+    },
+    {
+      title: "Dhurata për të gjithë",
+      description: "20% zbritje në koleksionin e ri",
+      icon: <Gift className="h-8 w-8" />,
       bgColor: "from-purple-500 to-purple-700",
       textColor: "text-white",
-      cta: "Shiko koleksionin"
+      cta: "Blej online"
     }
   ];
   
-  // Rotate through ads every 5 seconds
-  React.useEffect(() => {
+  // Rotate through ads every 7 seconds
+  useEffect(() => {
     const timer = setInterval(() => {
       setAdIndex((prevIndex) => (prevIndex + 1) % advertisements.length);
-    }, 5000);
+    }, 7000);
     
     return () => clearInterval(timer);
   }, [advertisements.length]);
   
+  // Get current advertisement
   const currentAd = advertisements[adIndex];
 
+  // Generate random image for each ad to make them look unique
+  const getRandomImage = (index: number) => {
+    const imageIds = [
+      "1565060169179-b3aec37bd78c",
+      "1472851294608-062f824d29cc", 
+      "1484154218962-a197022b5858",
+      "1505022610485-0dab70db6fba"
+    ];
+    
+    return `https://images.unsplash.com/photo-${imageIds[index % imageIds.length]}?auto=format&fit=crop&w=300&q=80`;
+  };
+
   return (
-    <div 
-      className={`
-        fixed ${position === 'left' ? 'left-4' : 'right-4'} top-[200px] w-[160px] h-[600px]
-        ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}
-        rounded-lg shadow-lg overflow-hidden 
-        transition-all duration-300 hover:scale-105 hover:shadow-xl
-        z-10
-      `}
-    >
-      <div className="h-full flex flex-col">
-        {/* Ad Label */}
-        <div className={`text-center py-2 px-1 text-xs ${darkMode ? 'text-gray-400 bg-gray-700' : 'text-gray-500 bg-gray-100'}`}>
-          Reklamë
+    <div className={`
+      fixed ${position === 'left' ? 'left-4' : 'right-4'} top-[200px]
+      w-[160px] z-20
+      ${darkMode ? 'bg-gray-800' : 'bg-white'}
+      border ${darkMode ? 'border-gray-700' : 'border-gray-200'}
+      rounded-lg shadow-lg overflow-hidden
+    `}>
+      {/* Ad Label */}
+      <div className={`text-center py-1 text-xs ${darkMode ? 'text-gray-400 bg-gray-700' : 'text-gray-500 bg-gray-100'}`}>
+        Reklamë
+      </div>
+      
+      {/* Ad Content */}
+      <div className="flex flex-col h-[500px]">
+        {/* Gradient Header */}
+        <div className={`bg-gradient-to-r ${currentAd.bgColor} p-4 text-center ${currentAd.textColor}`}>
+          <div className="inline-flex items-center justify-center p-2 bg-white/20 rounded-full mb-3">
+            {currentAd.icon}
+          </div>
+          <h3 className="font-bold text-sm mb-1">{currentAd.title}</h3>
+          <p className="text-xs opacity-90">{currentAd.description}</p>
         </div>
         
-        {/* Ad Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Ad Header with Gradient */}
-          <div className={`bg-gradient-to-r ${currentAd.bgColor} p-4 text-center ${currentAd.textColor}`}>
-            <div className="flex justify-center mb-3">
-              {currentAd.icon}
-            </div>
-            <h3 className="font-bold text-sm mb-1">{currentAd.title}</h3>
-            <p className="text-xs opacity-90">{currentAd.description}</p>
-          </div>
-          
-          {/* Ad Image */}
-          <div className="flex-1 flex items-center justify-center overflow-hidden">
+        {/* Ad Image */}
+        <div className="flex-1 flex items-center justify-center p-2">
+          <div className="w-full h-[200px] overflow-hidden rounded-lg">
             <img 
-              src={`https://images.unsplash.com/photo-${1500000000000 + adIndex * 1000000}?w=400&h=300&crop=entropy&fit=crop&q=80`} 
+              src={getRandomImage(adIndex)}
               alt="Ad Content"
-              className="w-full h-auto object-cover"
+              className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
             />
           </div>
+        </div>
+        
+        {/* Call to Action */}
+        <div className="p-3 text-center">
+          <button 
+            className={`
+              w-full py-2 px-2 rounded-lg text-sm font-medium
+              bg-gradient-to-r ${currentAd.bgColor} ${currentAd.textColor}
+              shadow transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5
+            `}
+          >
+            {currentAd.cta}
+          </button>
           
-          {/* Call to Action */}
-          <div className="p-4 text-center">
-            <button 
-              className={`w-full py-2 px-3 rounded-lg font-medium text-sm
-                bg-gradient-to-r ${currentAd.bgColor} ${currentAd.textColor}
-                transition-transform duration-200 transform hover:scale-105 hover:shadow-md`}
-            >
-              {currentAd.cta}
-            </button>
-            
-            <div className="mt-3 flex justify-center">
-              {advertisements.map((_, i) => (
-                <span 
-                  key={i} 
-                  className={`h-2 w-2 rounded-full mx-1 ${
-                    i === adIndex 
-                      ? 'bg-blue-500' 
-                      : darkMode ? 'bg-gray-600' : 'bg-gray-300'
-                  }`}
-                ></span>
-              ))}
-            </div>
+          {/* Ad Navigation Dots */}
+          <div className="mt-3 flex justify-center">
+            {advertisements.map((_, i) => (
+              <button 
+                key={i} 
+                onClick={() => setAdIndex(i)}
+                className={`
+                  h-2 w-2 mx-1 rounded-full transition-all duration-300
+                  ${i === adIndex 
+                    ? 'bg-blue-500 scale-125' 
+                    : darkMode ? 'bg-gray-600' : 'bg-gray-300'
+                  }
+                `}
+                aria-label={`Advertisement ${i+1}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      {/* Promotion Section */}
+      <div className={`p-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className={darkMode ? "text-gray-400" : "text-gray-500"}>
+              <Bookmark className="h-3 w-3 inline mr-1" />
+              Kurseni
+            </span>
+            <span className={`font-medium ${darkMode ? "text-white" : "text-black"}`}>
+              15%
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-between text-xs">
+            <span className={darkMode ? "text-gray-400" : "text-gray-500"}>
+              <Star className="h-3 w-3 inline mr-1" />
+              Vlerësimet
+            </span>
+            <span className={`font-medium ${darkMode ? "text-white" : "text-black"}`}>
+              4.8/5
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-between text-xs">
+            <span className={darkMode ? "text-gray-400" : "text-gray-500"}>
+              <CreditCard className="h-3 w-3 inline mr-1" />
+              Pagesa
+            </span>
+            <span className={`font-medium ${darkMode ? "text-white" : "text-black"}`}>
+              Të sigurta
+            </span>
           </div>
         </div>
         
-        {/* Ad Footer */}
-        <div className={`text-center py-2 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          partneri.com
+        <div className={`mt-3 text-center text-xs ${darkMode ? "text-blue-400" : "text-blue-600"} font-medium`}>
+          <a href="#" className="inline-flex items-center">
+            <Zap className="h-3 w-3 mr-1" />
+            Merr ofertën tani
+          </a>
         </div>
       </div>
     </div>
