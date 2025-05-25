@@ -262,7 +262,7 @@ function App() {
       {/* Don't show navbar on admin pages */}
       {!window.location.pathname.startsWith('/admin') && <Navbar />}
       
-      {/* Add Advertisements */}
+      {/* Add Advertisements - only on non-admin pages */}
       {!window.location.pathname.startsWith('/admin') && (
         <>
           <Advertisement position="left" />

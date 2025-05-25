@@ -53,16 +53,12 @@ const Advertisement: React.FC<AdvertisementProps> = ({ position }) => {
   return (
     <div 
       className={`
-        absolute ${position}-0 top-24 w-[160px] h-[600px]
+        fixed ${position === 'left' ? 'left-4' : 'right-4'} top-[200px] w-[160px] h-[600px]
         ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}
-        rounded-lg shadow-lg overflow-hidden mx-4
+        rounded-lg shadow-lg overflow-hidden 
         transition-all duration-300 hover:scale-105 hover:shadow-xl
-        sticky
+        z-10
       `}
-      style={{ 
-        top: '5rem',
-        [position]: '0.5rem'
-      }}
     >
       <div className="h-full flex flex-col">
         {/* Ad Label */}
