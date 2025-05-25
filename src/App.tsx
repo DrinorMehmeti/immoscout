@@ -265,8 +265,10 @@ function App() {
       {/* Add Advertisements - only on non-admin pages */}
       {!window.location.pathname.startsWith('/admin') && (
         <>
-          <Advertisement position="left" />
-          <Advertisement position="right" />
+          <div className="relative">
+            <Advertisement position="left" />
+            <Advertisement position="right" />
+          </div>
         </>
       )}
       

@@ -72,12 +72,18 @@ const Advertisement: React.FC<AdvertisementProps> = ({ position }) => {
 
   return (
     <div className={`
-      fixed ${position === 'left' ? 'left-4' : 'right-4'} top-[200px]
+      absolute ${position === 'left' ? 'left-4' : 'right-4'} top-[200px]
       w-[160px] z-20
       ${darkMode ? 'bg-gray-800' : 'bg-white'}
       border ${darkMode ? 'border-gray-700' : 'border-gray-200'}
       rounded-lg shadow-lg overflow-hidden
-    `}>
+      transition-all duration-300
+    `}
+    style={{
+      position: 'absolute',
+      top: '200px',
+      [position]: '4px'
+    }}>
       {/* Ad Label */}
       <div className={`text-center py-1 text-xs ${darkMode ? 'text-gray-400 bg-gray-700' : 'text-gray-500 bg-gray-100'}`}>
         Reklamë
