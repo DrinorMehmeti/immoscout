@@ -21,33 +21,37 @@ const CurrentViewers: React.FC<CurrentViewersProps> = ({ propertyId }) => {
       localStorage.setItem('property_viewer_session_id', sessionId);
     }
     
-    // Function to register this viewer and get count
-    const registerAndGetCount = async () => {
+    // Function to get count without attempting to insert a view record
+    const getViewCount = async () => {
       try {
-        // Get view count without inserting a new view record
-        // This avoids the RLS issue while still getting the count
+        // Use a safer approach by calling an RPC function that doesn't attempt to insert a record
+        // This avoids the RLS policy issue
         const { data, error } = await supabase.rpc('get_property_view_stats', {
           days_param: 1, // Default to 1 day for current viewers
           property_id_param: propertyId
         });
         
-        if (error) throw error;
+        if (error) {
+          console.error('Error in RPC call:', error);
+          throw error;
+        }
         
         // Update state with viewer count
         setViewerCount(data?.current_viewers || 0);
         setError(null);
       } catch (err) {
         console.error('Error fetching viewer count:', err);
+        // Gracefully handle the error by not showing the component
         setError('Could not get current viewer count');
         setViewerCount(null);
       }
     };
     
-    // Register and get count immediately
-    registerAndGetCount();
+    // Get count immediately
+    getViewCount();
     
-    // Set up interval to refresh count and keep session active
-    const intervalId = setInterval(registerAndGetCount, 30000); // Every 30 seconds
+    // Set up interval to refresh count
+    const intervalId = setInterval(getViewCount, 30000); // Every 30 seconds
     
     // Clean up on unmount
     return () => {
