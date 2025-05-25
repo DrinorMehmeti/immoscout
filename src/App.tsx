@@ -5,6 +5,7 @@ import HeroSection from './components/HeroSection';
 import HomepageProperties from './components/HomepageProperties';
 import PremiumFeatures from './components/PremiumFeatures';
 import Footer from './components/Footer';
+import Advertisement from './components/Advertisement';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
 import { Building, ArrowRight, Home, Check, Star } from 'lucide-react';
@@ -261,7 +262,15 @@ function App() {
       {/* Don't show navbar on admin pages */}
       {!window.location.pathname.startsWith('/admin') && <Navbar />}
       
-      <main className={`flex-grow ${!window.location.pathname.startsWith('/admin') ? 'pt-16' : ''}`}>
+      {/* Add Advertisements */}
+      {!window.location.pathname.startsWith('/admin') && (
+        <>
+          <Advertisement position="left" />
+          <Advertisement position="right" />
+        </>
+      )}
+      
+      <main className={`flex-grow ${!window.location.pathname.startsWith('/admin') ? 'pt-16 px-[180px]' : ''}`}>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
@@ -291,7 +300,6 @@ function App() {
         </Routes>
       </main>
       
-      {/* Don't show footer on admin pages */}
       {!window.location.pathname.startsWith('/admin') && <Footer />}
     </div>
   );
