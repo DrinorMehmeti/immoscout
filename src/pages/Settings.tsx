@@ -15,7 +15,8 @@ import {
   Eye, 
   EyeOff,
   HelpCircle,
-  Info
+  Info,
+  Trash2
 } from 'lucide-react';
 
 const Settings: React.FC = () => {
