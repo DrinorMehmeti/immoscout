@@ -246,6 +246,7 @@ function App() {
   const { authState } = useAuth();
   const { darkMode } = useTheme();
   const navigate = useNavigate();
+  const currentPath = window.location.pathname;
 
   // Redirect authenticated users away from auth pages
   useEffect(() => {
@@ -257,13 +258,16 @@ function App() {
     }
   }, [authState.isAuthenticated, navigate]);
 
+  // Check if current page is login or register
+  const isAuthPage = currentPath === '/login' || currentPath === '/register';
+
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
       {/* Don't show navbar on admin pages */}
       {!window.location.pathname.startsWith('/admin') && <Navbar />}
       
-      {/* Add Advertisements - only on non-admin pages and on larger screens */}
-      {!window.location.pathname.startsWith('/admin') && (
+      {/* Add Advertisements - only on non-admin pages, non-auth pages, and on larger screens */}
+      {!window.location.pathname.startsWith('/admin') && !isAuthPage && (
         <>
           <div className="relative hidden lg:block">
             <Advertisement position="left" />
