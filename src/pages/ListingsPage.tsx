@@ -104,22 +104,21 @@ const ListingsPage: React.FC = () => {
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} flex flex-col`}>
       <main className="flex-grow pt-6 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <form onSubmit={handleSearchSubmit} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg shadow-md mb-6`}>
-          <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div className="flex-1">
-              <div className={`flex items-center border ${darkMode ? 'border-gray-700' : 'border-gray-300'} rounded-lg overflow-hidden`}>
-                <div className="pl-4 pr-2 py-2 text-gray-400">
-                  <Search className="h-5 w-5" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Kërkoni me fjalë kyçe..."
-                  className={`w-full px-2 py-3 focus:outline-none ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+          <div className="flex flex-col space-y-4">
+            <div className={`flex items-center border ${darkMode ? 'border-gray-700' : 'border-gray-300'} rounded-lg overflow-hidden`}>
+              <div className="pl-4 pr-2 py-2 text-gray-400">
+                <Search className="h-5 w-5" />
               </div>
+              <input
+                type="text"
+                placeholder="Kërkoni me fjalë kyçe..."
+                className={`w-full px-2 py-3 focus:outline-none ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <div className="flex-1">
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className={`flex items-center border ${darkMode ? 'border-gray-700' : 'border-gray-300'} rounded-lg overflow-hidden`}>
                 <div className="pl-4 pr-2 py-2 text-gray-400">
                   <MapPin className="h-5 w-5" />
@@ -135,8 +134,7 @@ const ListingsPage: React.FC = () => {
                   ))}
                 </select>
               </div>
-            </div>
-            <div className="flex-1">
+              
               <div className={`flex items-center border ${darkMode ? 'border-gray-700' : 'border-gray-300'} rounded-lg overflow-hidden`}>
                 <div className="pl-4 pr-2 py-2 text-gray-400">
                   <Building className="h-5 w-5" />
@@ -153,65 +151,64 @@ const ListingsPage: React.FC = () => {
                   <option value="commercial">Lokal</option>
                 </select>
               </div>
-            </div>
-            <div className="flex-none">
+              
               <button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium flex items-center justify-center"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center"
               >
                 <Search className="h-5 w-5 mr-2" />
                 Kërko
               </button>
             </div>
-          </div>
 
-          <div className="mt-4 flex flex-wrap gap-4">
-            <div className="flex items-center">
-              <input
-                id="all"
-                type="radio"
-                name="listingType"
-                value="all"
-                checked={listingType === 'all'}
-                onChange={() => setListingType('all')}
-                className={`h-4 w-4 text-blue-600 focus:ring-blue-500 ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}
-              />
-              <label htmlFor="all" className={`ml-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                Të gjitha
-              </label>
-            </div>
-            <div className="flex items-center">
-              <input
-                id="sale"
-                type="radio"
-                name="listingType"
-                value="sale"
-                checked={listingType === 'sale'}
-                onChange={() => setListingType('sale')}
-                className={`h-4 w-4 text-blue-600 focus:ring-blue-500 ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}
-              />
-              <label htmlFor="sale" className={`ml-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                Në shitje
-              </label>
-            </div>
-            <div className="flex items-center">
-              <input
-                id="rent"
-                type="radio"
-                name="listingType"
-                value="rent"
-                checked={listingType === 'rent'}
-                onChange={() => setListingType('rent')}
-                className={`h-4 w-4 text-blue-600 focus:ring-blue-500 ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}
-              />
-              <label htmlFor="rent" className={`ml-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                Me qira
-              </label>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center">
+                <input
+                  id="all"
+                  type="radio"
+                  name="listingType"
+                  value="all"
+                  checked={listingType === 'all'}
+                  onChange={() => setListingType('all')}
+                  className={`h-4 w-4 text-blue-600 focus:ring-blue-500 ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}
+                />
+                <label htmlFor="all" className={`ml-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  Të gjitha
+                </label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  id="sale"
+                  type="radio"
+                  name="listingType"
+                  value="sale"
+                  checked={listingType === 'sale'}
+                  onChange={() => setListingType('sale')}
+                  className={`h-4 w-4 text-blue-600 focus:ring-blue-500 ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}
+                />
+                <label htmlFor="sale" className={`ml-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  Në shitje
+                </label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  id="rent"
+                  type="radio"
+                  name="listingType"
+                  value="rent"
+                  checked={listingType === 'rent'}
+                  onChange={() => setListingType('rent')}
+                  className={`h-4 w-4 text-blue-600 focus:ring-blue-500 ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}
+                />
+                <label htmlFor="rent" className={`ml-2 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  Me qira
+                </label>
+              </div>
             </div>
           </div>
         </form>
         
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <div>
             <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Shpalljet e patundshmërive</h1>
             <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{filteredProperties.length} prona të gjetura</p>
@@ -272,7 +269,7 @@ const ListingsPage: React.FC = () => {
             <p className={`mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Provoni të ndryshoni filtrat tuaj të kërkimit për të gjetur prona</p>
           </div>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProperties.map((property) => (
               <PropertyCard key={property.id} property={property} />
             ))}
@@ -313,7 +310,7 @@ const ListingsPage: React.FC = () => {
                     </div>
                     <p className={`mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{property.description}</p>
                     
-                    <div className="mt-4 flex items-center space-x-4">
+                    <div className="mt-4 flex flex-wrap items-center gap-4">
                       {property.rooms && (
                         <div className={`flex items-center text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           <span className="font-medium">{property.rooms} dhoma</span>
@@ -332,7 +329,7 @@ const ListingsPage: React.FC = () => {
                     </div>
                     
                     <div className="mt-4">
-                      <a href="#" className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium inline-block">
+                      <a href={`/property/${property.id}`} className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium inline-block">
                         Shiko detajet
                       </a>
                     </div>

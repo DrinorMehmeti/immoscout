@@ -262,17 +262,17 @@ function App() {
       {/* Don't show navbar on admin pages */}
       {!window.location.pathname.startsWith('/admin') && <Navbar />}
       
-      {/* Add Advertisements - only on non-admin pages */}
+      {/* Add Advertisements - only on non-admin pages and on larger screens */}
       {!window.location.pathname.startsWith('/admin') && (
         <>
-          <div className="relative">
+          <div className="relative hidden lg:block">
             <Advertisement position="left" />
             <Advertisement position="right" />
           </div>
         </>
       )}
       
-      <main className={`flex-grow ${!window.location.pathname.startsWith('/admin') ? 'pt-16 px-[180px]' : ''}`}>
+      <main className={`flex-grow ${!window.location.pathname.startsWith('/admin') ? 'pt-16 px-4 sm:px-6 md:px-8 lg:px-[180px]' : ''}`}>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />

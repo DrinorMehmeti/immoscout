@@ -9,6 +9,7 @@ interface AdvertisementProps {
 const Advertisement: React.FC<AdvertisementProps> = ({ position }) => {
   const { darkMode } = useTheme();
   const [adIndex, setAdIndex] = useState(0);
+  const [showAd, setShowAd] = useState(true);
   
   // Sample advertisement data
   const advertisements = [
@@ -70,6 +71,22 @@ const Advertisement: React.FC<AdvertisementProps> = ({ position }) => {
     return `https://images.unsplash.com/photo-${imageIds[index % imageIds.length]}?auto=format&fit=crop&w=300&q=80`;
   };
 
+  // Check if screen is mobile size
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setShowAd(window.innerWidth > 1024); // Hide on screens smaller than lg breakpoint
+    };
+    
+    // Initial check
+    checkScreenSize();
+    
+    // Add event listener for resize
+    window.addEventListener('resize', checkScreenSize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
   // Calculate the position based on the viewport width
   const getAdPosition = () => {
     if (position === 'left') {
@@ -86,6 +103,8 @@ const Advertisement: React.FC<AdvertisementProps> = ({ position }) => {
       };
     }
   };
+
+  if (!showAd) return null;
 
   return (
     <div className={`

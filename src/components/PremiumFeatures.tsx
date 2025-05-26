@@ -15,7 +15,7 @@ const PremiumFeatures: React.FC = () => {
         </div>
 
         <div className="mt-12 bg-white rounded-lg shadow-xl overflow-hidden">
-          <div className="lg:flex">
+          <div className="lg:flex flex-col lg:flex-row">
             <div className="p-8 sm:p-10 lg:flex-1">
               <h3 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">
                 Premium
@@ -80,7 +80,7 @@ const PremiumFeatures: React.FC = () => {
           </div>
         </div>
         
-        <div className="mt-12 grid gap-8 md:grid-cols-3">
+        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           <div className="bg-white rounded-lg shadow-md p-6 flex flex-col items-center text-center">
             <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-4">
               <Star className="h-6 w-6 text-blue-600" />

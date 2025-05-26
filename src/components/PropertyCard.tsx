@@ -312,7 +312,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
         </div>
         <p className={`mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'} text-sm line-clamp-2`}>{property.description}</p>
         
-        <div className="mt-4 flex items-center justify-between">
+        <div className="mt-4 flex items-center justify-between flex-wrap gap-2">
           {property.rooms && (
             <div className={`flex items-center text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <BedDouble className="h-4 w-4 mr-1" />
@@ -343,7 +343,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           
           {/* Only show edit/delete buttons to the property owner */}
           {isOwner && (
-            <div className="flex justify-center gap-2 mt-1">
+            <div className="flex justify-center gap-2 mt-1 flex-wrap">
               {status === 'pending' && (
                 <span className="flex items-center px-3 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
                   <Clock className="h-4 w-4 mr-1" /> Në pritje për aprovim

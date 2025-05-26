@@ -57,8 +57,8 @@ const HomepageProperties: React.FC = () => {
       </div>
       
       <div className="mt-12">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Të rejat në treg</h3>
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+          <h3 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'} mb-4 sm:mb-0`}>Të rejat në treg</h3>
           <Link to="/listings" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
             Shiko të gjitha
           </Link>

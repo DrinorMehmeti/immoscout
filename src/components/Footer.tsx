@@ -1,6 +1,7 @@
 import React from 'react';
 import { Home, Mail, Phone, ExternalLink, Facebook, Instagram, Twitter } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   const { darkMode } = useTheme();
@@ -8,7 +9,7 @@ const Footer: React.FC = () => {
   return (
     <footer className={darkMode ? "bg-gray-950 text-white" : "bg-gray-900 text-white"}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center">
               <Home className="h-8 w-8 text-blue-400" />
@@ -34,22 +35,22 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">Navigimi</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Ballina</a>
+                <Link to="/" className="text-gray-400 hover:text-white">Ballina</Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Shpallje</a>
+                <Link to="/listings" className="text-gray-400 hover:text-white">Shpallje</Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Rreth nesh</a>
+                <Link to="/about" className="text-gray-400 hover:text-white">Rreth nesh</Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Si funksionon</a>
+                <Link to="/how-it-works" className="text-gray-400 hover:text-white">Si funksionon</Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Premium</a>
+                <Link to="/premium" className="text-gray-400 hover:text-white">Premium</Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Kontakti</a>
+                <Link to="/contact" className="text-gray-400 hover:text-white">Kontakti</Link>
               </li>
             </ul>
           </div>
@@ -100,7 +101,7 @@ const Footer: React.FC = () => {
         <div className={`mt-12 pt-8 border-t ${darkMode ? 'border-gray-800' : 'border-gray-800'} text-gray-400 text-sm`}>
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p>© 2025 RealEstate Kosovo. Të gjitha të drejtat e rezervuara.</p>
-            <div className="mt-4 md:mt-0 flex space-x-6">
+            <div className="mt-4 md:mt-0 flex flex-wrap justify-center space-x-4 space-y-2 md:space-y-0">
               <a href="#" className="hover:text-white">Kushtet e përdorimit</a>
               <a href="#" className="hover:text-white">Privatësia</a>
               <a href="#" className="hover:text-white">Cookies</a>
