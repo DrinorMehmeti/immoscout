@@ -74,15 +74,15 @@ const Advertisement: React.FC<AdvertisementProps> = ({ position }) => {
   const getAdPosition = () => {
     if (position === 'left') {
       return {
-        left: 'calc(50% - 600px)',
+        left: 'calc(50% - 700px)',
         transform: 'translateX(-100%)',
-        marginLeft: '-20px'
+        marginLeft: '-40px'
       };
     } else {
       return {
-        right: 'calc(50% - 600px)', 
+        right: 'calc(50% - 700px)', 
         transform: 'translateX(100%)',
-        marginRight: '-20px'
+        marginRight: '-40px'
       };
     }
   };
@@ -90,7 +90,7 @@ const Advertisement: React.FC<AdvertisementProps> = ({ position }) => {
   return (
     <div className={`
       fixed top-[200px] z-20
-      w-[160px]
+      w-[140px]
       ${darkMode ? 'bg-gray-800' : 'bg-white'}
       border ${darkMode ? 'border-gray-700' : 'border-gray-200'}
       rounded-lg shadow-lg overflow-hidden
