@@ -70,19 +70,36 @@ const Advertisement: React.FC<AdvertisementProps> = ({ position }) => {
     return `https://images.unsplash.com/photo-${imageIds[index % imageIds.length]}?auto=format&fit=crop&w=300&q=80`;
   };
 
+  // Calculate the position based on the viewport width
+  const getAdPosition = () => {
+    if (position === 'left') {
+      return {
+        left: 'calc(50% - 600px)',
+        transform: 'translateX(-100%)',
+        marginLeft: '-20px'
+      };
+    } else {
+      return {
+        right: 'calc(50% - 600px)', 
+        transform: 'translateX(100%)',
+        marginRight: '-20px'
+      };
+    }
+  };
+
   return (
     <div className={`
-      absolute ${position === 'left' ? 'left-4' : 'right-4'} top-[200px]
-      w-[160px] z-20
+      fixed top-[200px] z-20
+      w-[160px]
       ${darkMode ? 'bg-gray-800' : 'bg-white'}
       border ${darkMode ? 'border-gray-700' : 'border-gray-200'}
       rounded-lg shadow-lg overflow-hidden
       transition-all duration-300
     `}
     style={{
-      position: 'absolute',
+      position: 'fixed',
       top: '200px',
-      [position]: '4px'
+      ...getAdPosition()
     }}>
       {/* Ad Label */}
       <div className={`text-center py-1 text-xs ${darkMode ? 'text-gray-400 bg-gray-700' : 'text-gray-500 bg-gray-100'}`}>
