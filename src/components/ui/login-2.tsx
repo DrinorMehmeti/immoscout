@@ -276,3 +276,5 @@ export default function Login04() {
     </div>
   );
 }
+
+export { Button, Input, Label, Separator }
