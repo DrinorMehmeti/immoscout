@@ -5,7 +5,6 @@ import HeroSection from './components/HeroSection';
 import HomepageProperties from './components/HomepageProperties';
 import PremiumFeatures from './components/PremiumFeatures';
 import Footer from './components/Footer';
-import Advertisement from './components/Advertisement';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
 import { Building, ArrowRight, Home, Check, Star } from 'lucide-react';
@@ -258,25 +257,12 @@ function App() {
     }
   }, [authState.isAuthenticated, navigate]);
 
-  // Check if current page is login or register
-  const isAuthPage = currentPath === '/login' || currentPath === '/register';
-
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
       {/* Don't show navbar on admin pages */}
       {!window.location.pathname.startsWith('/admin') && <Navbar />}
       
-      {/* Add Advertisements - only on non-admin pages, non-auth pages, and on larger screens */}
-      {!window.location.pathname.startsWith('/admin') && !isAuthPage && (
-        <>
-          <div className="relative hidden lg:block">
-            <Advertisement position="left" />
-            <Advertisement position="right" />
-          </div>
-        </>
-      )}
-      
-      <main className={`flex-grow ${!window.location.pathname.startsWith('/admin') ? 'pt-16 px-4 sm:px-6 md:px-8 lg:px-[180px]' : ''}`}>
+      <main className={`flex-grow ${!window.location.pathname.startsWith('/admin') ? 'pt-16' : ''}`}>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
