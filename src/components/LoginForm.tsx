@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Button, Input, Label, Separator } from '../components/ui/login-2';
 
 interface LoginFormProps {
   onToggleForm: () => void;
@@ -11,6 +12,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleForm }) => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   const { login } = useAuth();
 
@@ -53,42 +55,38 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleForm }) => {
       <form onSubmit={handleSubmit}>
         <div className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email
-            </label>
+            <Label htmlFor="email">Email</Label>
             <div className="mt-1 relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Mail className="h-5 w-5 text-gray-400" />
               </div>
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-10 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="pl-10"
                 placeholder="ju@shembull.com"
               />
             </div>
           </div>
           
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Fjalëkalimi
-            </label>
+            <Label htmlFor="password">Fjalëkalimi</Label>
             <div className="mt-1 relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-400" />
               </div>
-              <input
+              <Input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="pl-10"
                 placeholder="********"
               />
             </div>
@@ -115,10 +113,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleForm }) => {
           </div>
           
           <div>
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 disabled:opacity-50"
+              className="w-full"
             >
               {isLoading ? (
                 <span className="flex items-center">
@@ -131,7 +129,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleForm }) => {
               ) : (
                 'Kyçu'
               )}
-            </button>
+            </Button>
           </div>
         </div>
       </form>
@@ -139,7 +137,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleForm }) => {
       <div className="mt-6">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+            <Separator className="w-full" />
           </div>
           <div className="relative flex justify-center text-sm">
             <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Ose</span>
