@@ -1,6 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useState } from "react";
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { Mail, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -164,8 +168,43 @@ const Logo = (props: React.JSX.IntrinsicAttributes & React.SVGProps<SVGSVGElemen
   </svg>
 );
 
-
 export default function Login04() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { success, errorMessage } = await login(email, password);
+      
+      if (success) {
+        // Save email if remember me is checked
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', email);
+        } else {
+          localStorage.removeItem('rememberedEmail');
+        }
+        
+        navigate('/dashboard');
+      } else {
+        setError(errorMessage || 'Identifikimi dështoi. Kontrolloni kredencialet tuaja.');
+      }
+    } catch (err) {
+      setError('Ndodhi një gabim gjatë kyçjes. Ju lutemi provoni përsëri.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="flex flex-1 flex-col justify-center px-4 py-10 lg:px-6">
@@ -176,21 +215,29 @@ export default function Login04() {
               aria-hidden={true}
             />
             <p className="font-medium text-lg text-foreground dark:text-foreground">
-              Acme
+              RealEstate Kosovo
             </p>
           </div>
           <h3 className="mt-6 text-lg font-semibold text-foreground dark:text-foreground">
-            Sign in to your account
+            Kyçuni në llogarinë tuaj
           </h3>
           <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
-            Don't have an account?{" "}
-            <a
-              href="#"
+            Nuk keni llogari?{" "}
+            <Link
+              to="/register"
               className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
             >
-              Sign up
-            </a>
+              Regjistrohu
+            </Link>
           </p>
+
+          {error && (
+            <div className="mt-4 flex p-4 rounded-md bg-destructive/10 dark:bg-destructive/20">
+              <AlertTriangle className="h-5 w-5 text-destructive mr-3 flex-shrink-0" />
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
           <div className="mt-8 flex flex-col items-center space-y-2 sm:flex-row sm:space-x-4 sm:space-y-0">
             <Button
               variant="outline"
@@ -199,7 +246,7 @@ export default function Login04() {
             >
               <a href="#">
                 <GitHubIcon className="size-5" aria-hidden={true} />
-                <span className="text-sm font-medium">Login with GitHub</span>
+                <span className="text-sm font-medium">Kyçu me GitHub</span>
               </a>
             </Button>
             <Button
@@ -209,7 +256,7 @@ export default function Login04() {
             >
               <a href="#">
                 <GoogleIcon className="size-4" aria-hidden={true} />
-                <span className="text-sm font-medium">Login with Google</span>
+                <span className="text-sm font-medium">Kyçu me Google</span>
               </a>
             </Button>
           </div>
@@ -220,56 +267,124 @@ export default function Login04() {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
-                or
+                ose
               </span>
             </div>
           </div>
 
-          <form action="#" method="post" className="mt-6 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
               <Label
-                htmlFor="email-login-04"
+                htmlFor="email-login"
                 className="text-sm font-medium text-foreground dark:text-foreground"
               >
                 Email
               </Label>
-              <Input
-                type="email"
-                id="email-login-04"
-                name="email-login-04"
-                autoComplete="email"
-                placeholder="ephraim@blocks.so"
-                className="mt-2"
-              />
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <Input
+                  type="email"
+                  id="email-login"
+                  name="email-login"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  placeholder="ju@shembull.com"
+                  className="pl-10"
+                  required
+                />
+              </div>
             </div>
             <div>
-              <Label
-                htmlFor="password-login-04"
-                className="text-sm font-medium text-foreground dark:text-foreground"
-              >
-                Password
-              </Label>
-              <Input
-                type="password"
-                id="password-login-04"
-                name="password-login-04"
-                autoComplete="password"
-                placeholder="********"
-                className="mt-2"
-              />
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="password-login"
+                  className="text-sm font-medium text-foreground dark:text-foreground"
+                >
+                  Fjalëkalimi
+                </Label>
+                <Link 
+                  to="/forgot-password" 
+                  className="text-sm font-medium text-primary hover:text-primary/90 dark:text-primary"
+                >
+                  Keni harruar?
+                </Link>
+              </div>
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  id="password-login"
+                  name="password-login"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  placeholder="********"
+                  className="pl-10 pr-10"
+                  required
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
-            <Button type="submit" className="mt-4 w-full py-2 font-medium">
-              Sign in
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-700"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                  Më mbaj mend
+                </label>
+              </div>
+            </div>
+
+            <Button 
+              type="submit" 
+              className="mt-4 w-full py-2 font-medium"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Duke u kyçur...
+                </span>
+              ) : (
+                "Kyçu"
+              )}
             </Button>
           </form>
           <p className="mt-6 text-sm text-muted-foreground dark:text-muted-foreground">
-            Forgot your password?{" "}
-            <a
-              href="#"
+            Nuk keni llogari?{' '}
+            <Link 
+              to="/register" 
               className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
             >
-              Reset password
-            </a>
+              Regjistrohu tani
+            </Link>
           </p>
         </div>
       </div>
