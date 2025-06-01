@@ -15,6 +15,7 @@ import ListingsPage from './pages/ListingsPage';
 import MyPropertiesPage from './pages/MyPropertiesPage';
 import PremiumPage from './pages/PremiumPage';
 import AddPropertyPage from './pages/AddPropertyPage';
+import EditPropertyPage from './pages/EditPropertyPage';
 import PropertyDetail from './pages/PropertyDetail';
 import Settings from './pages/Settings';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -275,6 +276,7 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/my-properties" element={<ProtectedRoute><MyPropertiesPage /></ProtectedRoute>} />
           <Route path="/add-property" element={<ProtectedRoute><AddPropertyPage /></ProtectedRoute>} />
+          <Route path="/edit-property/:id" element={<ProtectedRoute><EditPropertyPage /></ProtectedRoute>} />
           <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           

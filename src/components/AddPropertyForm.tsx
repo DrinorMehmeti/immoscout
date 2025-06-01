@@ -5,12 +5,14 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import TagInput from './TagInput';
+import { Property } from '../types';
 
 interface AddPropertyFormProps {
   onSuccess?: () => void;
+  existingProperty?: Property;
 }
 
-const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
+const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess, existingProperty }) => {
   const { authState } = useAuth();
   const { darkMode } = useTheme();
   const navigate = useNavigate();
@@ -31,12 +33,38 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
   const [images, setImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   
   // Form submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  
+  // Determine if we're in edit mode
+  const isEditMode = !!existingProperty;
+  
+  // Initialize form with existing property data if in edit mode
+  useEffect(() => {
+    if (existingProperty) {
+      setTitle(existingProperty.title);
+      setDescription(existingProperty.description);
+      setPrice(existingProperty.price.toString());
+      setLocation(existingProperty.location);
+      setPropertyType(existingProperty.type);
+      setListingType(existingProperty.listing_type);
+      setRooms(existingProperty.rooms?.toString() || '');
+      setBathrooms(existingProperty.bathrooms?.toString() || '');
+      setArea(existingProperty.area?.toString() || '');
+      setFeatures(existingProperty.features || []);
+      
+      // Set existing images
+      if (existingProperty.images && existingProperty.images.length > 0) {
+        setExistingImageUrls(existingProperty.images);
+      }
+    }
+  }, [existingProperty]);
   
   // Clean up preview URLs when component unmounts
   useEffect(() => {
@@ -49,8 +77,9 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       
-      // Limit to 10 images total
-      if (images.length + newFiles.length > 10) {
+      // Limit to 10 images total (including existing ones)
+      const totalImageCount = images.length + existingImageUrls.length - imagesToDelete.length;
+      if (totalImageCount + newFiles.length > 10) {
         alert('Ju mund të ngarkoni maksimum 10 foto');
         return;
       }
@@ -69,6 +98,11 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     
     setImages(prevImages => prevImages.filter((_, i) => i !== index));
     setImagePreviewUrls(prevUrls => prevUrls.filter((_, i) => i !== index));
+  };
+  
+  const removeExistingImage = (imageUrl: string) => {
+    setExistingImageUrls(prev => prev.filter(url => url !== imageUrl));
+    setImagesToDelete(prev => [...prev, imageUrl]);
   };
   
   // Helper function to retry operations with exponential backoff
@@ -151,6 +185,29 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
     }
   };
   
+  const deleteImagesFromStorage = async (imageUrls: string[]) => {
+    if (imageUrls.length === 0) return;
+    
+    try {
+      for (const url of imageUrls) {
+        // Extract the file path from the URL
+        // The URL format is like https://bucket.supabase.co/storage/v1/object/public/property-images/propertyId/fileName
+        const filePath = url.split('property-images/')[1];
+        if (!filePath) continue;
+        
+        const { error } = await supabase.storage
+          .from('property-images')
+          .remove([filePath]);
+          
+        if (error) {
+          console.error('Error deleting image:', error);
+        }
+      }
+    } catch (err) {
+      console.error('Error deleting images:', err);
+    }
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -180,78 +237,115 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       const bathroomsNumber = bathrooms ? parseInt(bathrooms, 10) : null;
       const areaNumber = area ? parseFloat(area) : null;
       
-      // Insert the property into the database
-      const { data: property, error: insertError } = await supabase
-        .from('properties')
-        .insert({
-          owner_id: authState.user.id,
-          title,
-          description,
-          price: priceNumber,
-          location,
-          type: propertyType,
-          listing_type: listingType,
-          rooms: roomsNumber,
-          bathrooms: bathroomsNumber,
-          area: areaNumber,
-          features: features.length > 0 ? features : null,
-          status: 'pending' // All new properties start as pending until approved
-        })
-        .select()
-        .single();
+      // Prepare property data
+      const propertyData = {
+        owner_id: authState.user.id,
+        title,
+        description,
+        price: priceNumber,
+        location,
+        type: propertyType,
+        listing_type: listingType,
+        rooms: roomsNumber,
+        bathrooms: bathroomsNumber,
+        area: areaNumber,
+        features: features.length > 0 ? features : null,
+      };
+      
+      let propertyId: string;
+      
+      if (isEditMode && existingProperty) {
+        // Update existing property
+        const { data: updatedProperty, error: updateError } = await supabase
+          .from('properties')
+          .update(propertyData)
+          .eq('id', existingProperty.id)
+          .select()
+          .single();
+          
+        if (updateError) {
+          throw updateError;
+        }
         
-      if (insertError) {
-        throw insertError;
+        if (!updatedProperty) {
+          throw new Error('Ndodhi një gabim gjatë përditësimit të pronës');
+        }
+        
+        propertyId = updatedProperty.id;
+        
+        // Delete images marked for deletion
+        if (imagesToDelete.length > 0) {
+          await deleteImagesFromStorage(imagesToDelete);
+        }
+      } else {
+        // Insert new property
+        const { data: newProperty, error: insertError } = await supabase
+          .from('properties')
+          .insert({
+            ...propertyData,
+            status: 'pending' // All new properties start as pending until approved
+          })
+          .select()
+          .single();
+          
+        if (insertError) {
+          throw insertError;
+        }
+        
+        if (!newProperty) {
+          throw new Error('Ndodhi një gabim gjatë shtimit të pronës');
+        }
+        
+        propertyId = newProperty.id;
       }
       
-      if (!property) {
-        throw new Error('Ndodhi një gabim gjatë shtimit të pronës');
-      }
-      
-      // Upload images if any
+      // Upload new images if any
       let uploadedImageUrls: string[] = [];
       if (images.length > 0) {
         try {
-          uploadedImageUrls = await uploadImagesToStorage(property.id);
-          
-          // Update the property with the image URLs
-          if (uploadedImageUrls.length > 0) {
-            const { error: updateError } = await supabase
-              .from('properties')
-              .update({
-                images: uploadedImageUrls
-              })
-              .eq('id', property.id);
-              
-            if (updateError) {
-              console.error('Error updating property with image URLs:', updateError);
-              // Continue anyway, the property was created successfully
-            }
-          }
+          uploadedImageUrls = await uploadImagesToStorage(propertyId);
         } catch (uploadError) {
           console.error('Error uploading images:', uploadError);
-          // Don't fail the entire process if uploading images fails
-          setError('Prona u shtua, por ndodhi një gabim gjatë ngarkimit të fotove. Ju mund t\'i shtoni më vonë.');
+          setError('Prona u ' + (isEditMode ? 'përditësua' : 'shtua') + ', por ndodhi një gabim gjatë ngarkimit të fotove. Ju mund t\'i shtoni më vonë.');
+        }
+      }
+      
+      // Combine existing images (that weren't deleted) with newly uploaded ones
+      const finalImageUrls = [...existingImageUrls.filter(url => !imagesToDelete.includes(url)), ...uploadedImageUrls];
+      
+      // Update the property with the final image URLs if we have any new ones or deleted any
+      if (uploadedImageUrls.length > 0 || imagesToDelete.length > 0) {
+        const { error: imageUpdateError } = await supabase
+          .from('properties')
+          .update({
+            images: finalImageUrls
+          })
+          .eq('id', propertyId);
+          
+        if (imageUpdateError) {
+          console.error('Error updating property with image URLs:', imageUpdateError);
         }
       }
       
       // Success!
       setSuccess(true);
       
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setPrice('');
-      setLocation('');
-      setPropertyType('apartment');
-      setListingType('rent');
-      setRooms('');
-      setBathrooms('');
-      setArea('');
-      setFeatures([]);
-      setImages([]);
-      setImagePreviewUrls([]);
-      setUploadProgress(0);
+      // Reset form if it's not an edit
+      if (!isEditMode) {
+        setTitle('');
+        setDescription('');
+        setPrice('');
+        setLocation('');
+        setPropertyType('apartment');
+        setListingType('rent');
+        setRooms('');
+        setBathrooms('');
+        setArea('');
+        setFeatures([]);
+        setImages([]);
+        setImagePreviewUrls([]);
+        setUploadProgress(0);
+      }
       
       // Call onSuccess callback if provided
       if (onSuccess) {
@@ -264,7 +358,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       }, 2000);
       
     } catch (err) {
-      console.error('Error adding property:', err);
+      console.error('Error ' + (isEditMode ? 'updating' : 'adding') + ' property:', err);
       setError(err instanceof Error ? err.message : 'Ndodhi një gabim i papritur');
     } finally {
       setIsSubmitting(false);
@@ -281,7 +375,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
       
       {success && (
         <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md">
-          <p>Prona u shtua me sukses! Do të ridrejtoheni së shpejti...</p>
+          <p>Prona u {isEditMode ? 'përditësua' : 'shtua'} me sukses! Do të ridrejtoheni së shpejti...</p>
         </div>
       )}
       
@@ -548,11 +642,44 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
               </p>
             </div>
             
+            {/* Display existing images */}
+            {existingImageUrls.length > 0 && (
+              <div className="mt-4">
+                <h4 className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                  Fotot ekzistuese
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {existingImageUrls.map((url, index) => (
+                    <div key={`existing-${index}`} className="relative group">
+                      <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md bg-gray-200">
+                        <img
+                          src={url}
+                          alt={`Existing ${index + 1}`}
+                          className="h-full w-full object-cover object-center"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeExistingImage(url)}
+                        className="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Display new images */}
             {imagePreviewUrls.length > 0 && (
               <div className="mt-4">
+                <h4 className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                  Fotot e reja
+                </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {imagePreviewUrls.map((url, index) => (
-                    <div key={index} className="relative group">
+                    <div key={`new-${index}`} className="relative group">
                       <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md bg-gray-200">
                         <img
                           src={url}
@@ -569,32 +696,32 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
                       </button>
                     </div>
                   ))}
-                  
-                  {/* Add more images button */}
-                  {imagePreviewUrls.length < 10 && (
-                    <div className="aspect-w-1 aspect-h-1 w-full">
-                      <label
-                        htmlFor="add-more-images"
-                        className={`flex flex-col items-center justify-center h-full rounded-md border-2 border-dashed cursor-pointer ${
-                          darkMode 
-                            ? 'border-gray-600 hover:border-gray-500' 
-                            : 'border-gray-300 hover:border-gray-400'
-                        }`}
-                      >
-                        <Plus className={`h-6 w-6 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} />
-                        <span className={`mt-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Shto foto</span>
-                        <input
-                          id="add-more-images"
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          className="sr-only"
-                          onChange={handleImageChange}
-                        />
-                      </label>
-                    </div>
-                  )}
                 </div>
+              </div>
+            )}
+            
+            {/* Add more images button */}
+            {existingImageUrls.length + imagePreviewUrls.length < 10 && (
+              <div className="mt-4 flex justify-center">
+                <label
+                  htmlFor="add-more-images"
+                  className={`flex flex-col items-center justify-center h-24 w-24 rounded-md border-2 border-dashed cursor-pointer ${
+                    darkMode 
+                      ? 'border-gray-600 hover:border-gray-500' 
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <Plus className={`h-6 w-6 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} />
+                  <span className={`mt-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Shto foto</span>
+                  <input
+                    id="add-more-images"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={handleImageChange}
+                  />
+                </label>
               </div>
             )}
           </div>
@@ -612,10 +739,10 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess }) => {
             {isSubmitting ? (
               <>
                 <Loader2 className="animate-spin h-5 w-5 mr-2" />
-                Duke shtuar pronën...
+                {isEditMode ? 'Duke përditësuar pronën...' : 'Duke shtuar pronën...'}
               </>
             ) : (
-              'Shto pronën'
+              isEditMode ? 'Përditëso pronën' : 'Shto pronën'
             )}
           </button>
         </div>
