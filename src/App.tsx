@@ -18,6 +18,7 @@ import AddPropertyPage from './pages/AddPropertyPage';
 import EditPropertyPage from './pages/EditPropertyPage';
 import PropertyDetail from './pages/PropertyDetail';
 import Settings from './pages/Settings';
+import NotificationsPage from './pages/NotificationsPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminProperties from './pages/admin/AdminProperties';
@@ -278,6 +279,7 @@ function App() {
           <Route path="/add-property" element={<ProtectedRoute><AddPropertyPage /></ProtectedRoute>} />
           <Route path="/edit-property/:id" element={<ProtectedRoute><EditPropertyPage /></ProtectedRoute>} />
           <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           
           {/* Admin routes */}
@@ -290,7 +292,7 @@ function App() {
           <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
           
           {/* Fallback */}
-          <Route path="*" element={<Navigate to="/\" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       

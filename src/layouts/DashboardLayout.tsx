@@ -69,16 +69,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   }`} />
                   Bëhu premium
                 </Link>
-                <div className={`flex items-center py-2 px-3 rounded-md group ${
-                  location.pathname === '/notifications' 
-                    ? darkMode ? 'bg-gray-700 text-white' : 'bg-blue-50 text-blue-700' 
-                    : darkMode ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-700 hover:bg-gray-100'
-                }`}>
+                <Link
+                  to="/notifications"
+                  className={`flex items-center py-2 px-3 rounded-md group ${
+                    location.pathname === '/notifications' 
+                      ? darkMode ? 'bg-gray-700 text-white' : 'bg-blue-50 text-blue-700' 
+                      : darkMode ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
                   <Bell className={`h-5 w-5 mr-3 ${
                     darkMode ? 'text-gray-400 group-hover:text-gray-300' : 'text-gray-500 group-hover:text-gray-700'
                   }`} />
                   Njoftime
-                </div>
+                </Link>
                 <Link
                   to="/settings"
                   className={`flex items-center py-2 px-3 rounded-md group ${
