@@ -9,7 +9,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
 import { Building, ArrowRight, Home, Check, Star } from 'lucide-react';
 import Login from './pages/Login';
-import Register from './pages/Register';
+import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
 import ListingsPage from './pages/ListingsPage';
 import MyPropertiesPage from './pages/MyPropertiesPage';
@@ -272,7 +272,7 @@ function App() {
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/listings" element={<ListingsPage />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
