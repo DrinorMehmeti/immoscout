@@ -15,7 +15,8 @@ import {
   Star,
   AlertTriangle,
   Copy,
-  Check
+  Check,
+  Bell
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
