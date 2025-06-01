@@ -522,7 +522,7 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess, existingPr
             {(propertyType === 'apartment' || propertyType === 'house') && (
               <>
                 <div>
-                  <label htmlFor="rooms" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <label htmlFor="rooms\" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Numri i dhomave
                   </label>
                   <input
