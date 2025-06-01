@@ -244,10 +244,6 @@ export default function Login04() {
               className="flex-1 items-center justify-center space-x-2 py-2"
               asChild
             >
-              <a href="#">
-                <GitHubIcon className="size-5" aria-hidden={true} />
-                <span className="text-sm font-medium">Kyçu me GitHub</span>
-              </a>
             </Button>
             <Button
               variant="outline"
