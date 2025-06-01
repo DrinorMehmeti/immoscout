@@ -186,9 +186,28 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const formattedDate = createdAt.toLocaleDateString('de-DE');
 
   const handleDelete = async () => {
-    // Hier kann die Löschlogik mit Supabase eingebaut werden
-    setShowDeleteConfirm(false);
-    // Optional: Seite neu laden oder Property aus Liste entfernen
+    try {
+      // Delete the property from the database
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', property.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Close the confirmation dialog
+      setShowDeleteConfirm(false);
+      
+      // Reload the page to reflect the changes
+      // In a real application, you might use a context or state management to avoid page reload
+      window.location.reload();
+      
+    } catch (err) {
+      console.error('Error deleting property:', err);
+      alert('Ndodhi një gabim gjatë fshirjes së pronës. Ju lutemi provoni përsëri.');
+    }
   };
 
   // Toggle favorite
@@ -364,7 +383,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           )}
         </div>
         
-        {/* Delete-Bestätigung */}
+        {/* Delete-Confirmation */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
             <div className={`p-6 rounded-xl shadow-xl ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}> 
