@@ -21,6 +21,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{success: boolean; errorMessage?: string}>;
   register: (name: string, email: string, password: string, userType: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{success: boolean; errorMessage?: string}>;
+  updatePassword: (newPassword: string) => Promise<{success: boolean; errorMessage?: string}>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +33,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     isAuthenticated: false,
     isLoading: true,
   });
+  const navigate = useNavigate();
 
   const fetchProfile = async (userId: string): Promise<ProfileType | null> => {
     try {
@@ -207,8 +210,49 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
+  const resetPassword = async (email: string): Promise<{success: boolean; errorMessage?: string}> => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) {
+        return { success: false, errorMessage: error.message };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      return { success: false, errorMessage: 'An unexpected error occurred. Please try again later.' };
+    }
+  };
+
+  const updatePassword = async (newPassword: string): Promise<{success: boolean; errorMessage?: string}> => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) {
+        return { success: false, errorMessage: error.message };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating password:', error);
+      return { success: false, errorMessage: 'An unexpected error occurred. Please try again later.' };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ authState, login, register, logout }}>
+    <AuthContext.Provider value={{ 
+      authState, 
+      login, 
+      register, 
+      logout, 
+      resetPassword,
+      updatePassword
+    }}>
       {children}
     </AuthContext.Provider>
   );

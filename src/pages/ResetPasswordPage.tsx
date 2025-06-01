@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Lock, Check, AlertTriangle, Loader2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 const ResetPasswordPage: React.FC = () => {
   const { darkMode } = useTheme();
+  const { updatePassword } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -14,19 +15,15 @@ const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Extract token from URL if present
+  // Check if we have an access token in the URL hash parameters
   useEffect(() => {
     // The URL will have parameters set by Supabase during the password reset flow
     // Check if there's an access_token parameter
     const hashParams = new URLSearchParams(location.hash.substring(1));
     const accessToken = hashParams.get('access_token');
     
-    if (accessToken) {
-      // Set the session using the access token
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: '',
-      });
+    if (!accessToken) {
+      setError('No access token found. Please make sure you clicked the link from your email.');
     }
   }, [location]);
   
@@ -47,12 +44,10 @@ const ResetPasswordPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
+      const { success, errorMessage } = await updatePassword(newPassword);
       
-      if (error) {
-        throw error;
+      if (!success) {
+        throw new Error(errorMessage || 'Failed to update password');
       }
       
       setSuccess(true);

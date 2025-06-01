@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, Check, KeyRound, AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const ForgotPasswordPage: React.FC = () => {
   const { darkMode } = useTheme();
+  const { resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -17,15 +19,13 @@ const ForgotPasswordPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const { success, errorMessage } = await resetPassword(email);
       
-      if (error) {
-        throw error;
+      if (!success) {
+        setError(errorMessage || 'Failed to send reset email');
+      } else {
+        setIsSuccess(true);
       }
-      
-      setIsSuccess(true);
     } catch (err) {
       console.error('Error sending reset email:', err);
       setError(err instanceof Error ? err.message : 'Ndodhi një gabim i papritur');
