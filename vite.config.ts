@@ -19,9 +19,13 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
     rollupOptions: {
-      input: resolve(__dirname, 'index.html'),
-    },
+      input: {
+        app: resolve(__dirname, 'index.html')
+      }
+    }
   },
   // Add this to clear cache issues
   clearScreen: false,
