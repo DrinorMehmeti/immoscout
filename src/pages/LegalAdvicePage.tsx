@@ -12,7 +12,9 @@ import {
   Key, 
   PieChart, 
   Building,
-  Landmark
+  Landmark,
+  MapPin,
+  MessageSquare
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
