@@ -25,6 +25,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ContactPage from './pages/ContactPage';
 import AgenciesPage from './pages/AgenciesPage';
 import PartnershipsPage from './pages/PartnershipsPage';
+import ReviewsPage from './pages/ReviewsPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminProperties from './pages/admin/AdminProperties';
@@ -284,6 +285,7 @@ function App() {
           <Route path="/kontakt" element={<ContactPage />} />
           <Route path="/agjencite" element={<AgenciesPage />} />
           <Route path="/bashkepunimet" element={<PartnershipsPage />} />
+          <Route path="/vlersimet" element={<ReviewsPage />} />
           
           {/* Protected routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

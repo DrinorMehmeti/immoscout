@@ -59,19 +59,19 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">Shërbimet</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Shpallje falas</a>
+                <Link to="/listings" className="text-gray-400 hover:text-white">Shpallje falas</Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Shpallje premium</a>
+                <Link to="/premium" className="text-gray-400 hover:text-white">Shpallje premium</Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Agjencitë</a>
+                <Link to="/agjencite" className="text-gray-400 hover:text-white">Agjencitë</Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Bashkëpunimet</a>
+                <Link to="/bashkepunimet" className="text-gray-400 hover:text-white">Bashkëpunimet</Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Vlerësimet</a>
+                <Link to="/vlersimet" className="text-gray-400 hover:text-white">Vlerësimet</Link>
               </li>
               <li>
                 <a href="#" className="text-gray-400 hover:text-white">Këshilla ligjore</a>
