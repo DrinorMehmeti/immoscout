@@ -103,7 +103,7 @@ const Footer: React.FC = () => {
             <p>© 2025 RealEstate Kosovo. Të gjitha të drejtat e rezervuara.</p>
             <div className="mt-4 md:mt-0 flex flex-wrap justify-center space-x-4 space-y-2 md:space-y-0">
               <Link to="/kushtet-e-perdorimit" className="hover:text-white">Kushtet e përdorimit</Link>
-              <a href="#" className="hover:text-white">Privatësia</a>
+              <Link to="/privatesia" className="hover:text-white">Privatësia</Link>
               <a href="#" className="hover:text-white">Cookies</a>
             </div>
           </div>

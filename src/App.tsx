@@ -28,6 +28,7 @@ import PartnershipsPage from './pages/PartnershipsPage';
 import ReviewsPage from './pages/ReviewsPage';
 import LegalAdvicePage from './pages/LegalAdvicePage';
 import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminProperties from './pages/admin/AdminProperties';
@@ -290,6 +291,7 @@ function App() {
           <Route path="/vlersimet" element={<ReviewsPage />} />
           <Route path="/keshilla-ligjore" element={<LegalAdvicePage />} />
           <Route path="/kushtet-e-perdorimit" element={<TermsPage />} />
+          <Route path="/privatesia" element={<PrivacyPage />} />
           
           {/* Protected routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
