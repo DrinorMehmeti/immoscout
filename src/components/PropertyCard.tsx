@@ -297,7 +297,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
         </div>
         
         {/* Redesigned Statistics Bar - Only visible to property owner */}
-        {isOwner && (
+        {isOwner && authState.user?.profile?.is_premium && (
           <div className="mt-3 mb-3 grid grid-cols-3 gap-2 border-y border-gray-100 dark:border-gray-700 py-2">
             <div className="flex flex-col items-center py-1 px-2 rounded-md bg-blue-50 dark:bg-blue-900/30">
               <div className="flex items-center text-blue-700 dark:text-blue-300 mb-1">

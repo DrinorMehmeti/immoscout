@@ -270,55 +270,43 @@ const ProfilePage: React.FC = () => {
         </div>
         
         {/* Profile Stats */}
-        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-6 mb-6`}>
-          <h2 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-            Statistikat e profilit
-          </h2>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className={`p-4 rounded-lg ${darkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
-              <p className={`text-sm ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Pronat totale</p>
-              <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                {loading ? <Clock className="h-5 w-5 animate-pulse" /> : profileStats.totalProperties}
-              </p>
-            </div>
-            
-            <div className={`p-4 rounded-lg ${darkMode ? 'bg-green-900/20' : 'bg-green-50'}`}>
-              <p className={`text-sm ${darkMode ? 'text-green-300' : 'text-green-700'}`}>Prona aktive</p>
-              <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                {loading ? <Clock className="h-5 w-5 animate-pulse" /> : profileStats.activeProperties}
-              </p>
-            </div>
-            
-            <div className={`p-4 rounded-lg ${darkMode ? 'bg-yellow-900/20' : 'bg-yellow-50'}`}>
-              <p className={`text-sm ${darkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>Prona në pritje</p>
-              <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                {loading ? <Clock className="h-5 w-5 animate-pulse" /> : profileStats.pendingProperties}
-              </p>
-            </div>
-            
-            <div className={`p-4 rounded-lg ${darkMode ? 'bg-purple-900/20' : 'bg-purple-50'}`}>
-              <p className={`text-sm ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>Favorite</p>
-              <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                {loading ? <Clock className="h-5 w-5 animate-pulse" /> : profileStats.favoriteCount}
-              </p>
-            </div>
-            
-            <div className={`p-4 rounded-lg ${darkMode ? 'bg-indigo-900/20' : 'bg-indigo-50'}`}>
-              <p className={`text-sm ${darkMode ? 'text-indigo-300' : 'text-indigo-700'}`}>Totali i shikimeve</p>
-              <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                {loading ? <Clock className="h-5 w-5 animate-pulse" /> : profileStats.totalViews}
-              </p>
-            </div>
-            
-            <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Ditët në platformë</p>
-              <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                {profileStats.accountAge}
-              </p>
+        {authState.user?.profile?.is_premium ? (
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-6 mb-6`}>
+            <h2 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              Statistikat e profilit
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className={`p-4 rounded-lg ${darkMode ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                <p className={`text-sm ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Pronat totale</p>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{loading ? <Clock className="h-5 w-5 animate-pulse" /> : profileStats.totalProperties}</p>
+              </div>
+              <div className={`p-4 rounded-lg ${darkMode ? 'bg-green-900/20' : 'bg-green-50'}`}>
+                <p className={`text-sm ${darkMode ? 'text-green-300' : 'text-green-700'}`}>Prona aktive</p>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{loading ? <Clock className="h-5 w-5 animate-pulse" /> : profileStats.activeProperties}</p>
+              </div>
+              <div className={`p-4 rounded-lg ${darkMode ? 'bg-yellow-900/20' : 'bg-yellow-50'}`}>
+                <p className={`text-sm ${darkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>Prona në pritje</p>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{loading ? <Clock className="h-5 w-5 animate-pulse" /> : profileStats.pendingProperties}</p>
+              </div>
+              <div className={`p-4 rounded-lg ${darkMode ? 'bg-purple-900/20' : 'bg-purple-50'}`}>
+                <p className={`text-sm ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>Favorite</p>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{loading ? <Clock className="h-5 w-5 animate-pulse" /> : profileStats.favoriteCount}</p>
+              </div>
+              <div className={`p-4 rounded-lg ${darkMode ? 'bg-indigo-900/20' : 'bg-indigo-50'}`}>
+                <p className={`text-sm ${darkMode ? 'text-indigo-300' : 'text-indigo-700'}`}>Totali i shikimeve</p>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{loading ? <Clock className="h-5 w-5 animate-pulse" /> : profileStats.totalViews}</p>
+              </div>
+              <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Ditët në platformë</p>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{profileStats.accountAge}</p>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-lg shadow-md p-6 mb-6 bg-yellow-50 dark:bg-yellow-900/30 text-center">
+            <span className="text-yellow-700 dark:text-yellow-300 text-sm font-medium">Statistikat janë të disponueshme vetëm për përdoruesit Premium.</span>
+          </div>
+        )}
         
         {/* Personal Information */}
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-6 mb-6`}>

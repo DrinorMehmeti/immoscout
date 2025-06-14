@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Eye, Star, TrendingUp, Calendar, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 interface PropertyDetailAnalyticsProps {
   propertyId: string;
@@ -26,6 +27,7 @@ const PropertyDetailAnalytics: React.FC<PropertyDetailAnalyticsProps> = ({ prope
     favoriteRatio: 0
   });
   const [loading, setLoading] = useState(true);
+  const { authState } = useAuth();
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -109,9 +111,11 @@ const PropertyDetailAnalytics: React.FC<PropertyDetailAnalyticsProps> = ({ prope
   }, [propertyId, isOwner]);
   
   if (!isOwner || loading) return null;
-  
+
+  const isPremium = !!authState.user?.profile?.is_premium;
+
   return (
-    <div className={`mt-6 ${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-md`}>
+    <div className={`mt-6 ${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-md relative`}>
       <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-4 flex items-center`}>
         <TrendingUp className="h-5 w-5 mr-2 text-blue-500" />
         Statistikat e Pronës
@@ -120,7 +124,7 @@ const PropertyDetailAnalytics: React.FC<PropertyDetailAnalyticsProps> = ({ prope
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
         <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
           <div className="flex justify-between items-start">
-            <div className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-blue-700'}`}>{analytics.totalViews}</div>
+            <div className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-blue-700'}`}>{isPremium ? analytics.totalViews : <span className="opacity-40 select-none">••••</span>}</div>
             <Eye className={`h-5 w-5 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
           </div>
           <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Totali i shikimeve</div>
@@ -128,7 +132,7 @@ const PropertyDetailAnalytics: React.FC<PropertyDetailAnalyticsProps> = ({ prope
         
         <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-green-50'}`}>
           <div className="flex justify-between items-start">
-            <div className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-green-700'}`}>{analytics.viewsThisWeek}</div>
+            <div className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-green-700'}`}>{isPremium ? analytics.viewsThisWeek : <span className="opacity-40 select-none">••••</span>}</div>
             <Calendar className={`h-5 w-5 ${darkMode ? 'text-green-400' : 'text-green-500'}`} />
           </div>
           <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Javën e fundit</div>
@@ -136,7 +140,7 @@ const PropertyDetailAnalytics: React.FC<PropertyDetailAnalyticsProps> = ({ prope
         
         <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-purple-50'}`}>
           <div className="flex justify-between items-start">
-            <div className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-purple-700'}`}>{analytics.totalFavorites}</div>
+            <div className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-purple-700'}`}>{isPremium ? analytics.totalFavorites : <span className="opacity-40 select-none">••••</span>}</div>
             <Star className={`h-5 w-5 ${darkMode ? 'text-purple-400' : 'text-purple-500'}`} />
           </div>
           <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Në favorite</div>
@@ -144,7 +148,7 @@ const PropertyDetailAnalytics: React.FC<PropertyDetailAnalyticsProps> = ({ prope
         
         <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-yellow-50'}`}>
           <div className="flex justify-between items-start">
-            <div className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-yellow-700'}`}>{analytics.favoriteRatio}%</div>
+            <div className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-yellow-700'}`}>{isPremium ? `${analytics.favoriteRatio}%` : <span className="opacity-40 select-none">••••</span>}</div>
             <Users className={`h-5 w-5 ${darkMode ? 'text-yellow-400' : 'text-yellow-500'}`} />
           </div>
           <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Raporti i interesit</div>
@@ -154,6 +158,12 @@ const PropertyDetailAnalytics: React.FC<PropertyDetailAnalyticsProps> = ({ prope
       <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
         Statistikat janë përditësuar së fundmi më {new Date().toLocaleString()}
       </div>
+      {!isPremium && (
+        <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex flex-col items-center justify-center rounded-lg z-10">
+          <span className="text-yellow-700 dark:text-yellow-300 text-xs font-medium mb-2 text-center">Statistikat janë të disponueshme vetëm për përdoruesit Premium.</span>
+          <a href="/premium" className="mt-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-semibold">Upgrade auf Premium</a>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Building, Euro, Upload, X, Plus, Loader2 } from 'lucide-react';
+import { MapPin, Building, Euro, Upload, X, Plus, Loader2, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -45,6 +45,10 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess, existingPr
   // Determine if we're in edit mode
   const isEditMode = !!existingProperty;
   
+  // Additional state for image limit modal
+  const [showImageLimitModal, setShowImageLimitModal] = useState(false);
+  const [imageLimitMessage, setImageLimitMessage] = useState('');
+  
   // Initialize form with existing property data if in edit mode
   useEffect(() => {
     if (existingProperty) {
@@ -73,18 +77,22 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess, existingPr
     };
   }, [imagePreviewUrls]);
   
+  // Premium-Status korrekt bestimmen
+  const isPremium = authState.user?.profile?.is_premium;
+  
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       
-      // Limit to 10 images total (including existing ones)
+      // Bild-Limit anhand des Premium-Status
+      const maxImages = isPremium ? 15 : 3;
       const totalImageCount = images.length + existingImageUrls.length - imagesToDelete.length;
-      if (totalImageCount + newFiles.length > 10) {
-        alert('Ju mund të ngarkoni maksimum 10 foto');
+      if (totalImageCount + newFiles.length > maxImages) {
+        setImageLimitMessage(`Sie können maximal ${maxImages} Bilder hochladen. ${isPremium ? '' : 'Upgraden Sie auf Premium für bis zu 15 Bilder.'}`);
+        setShowImageLimitModal(true);
         return;
       }
       
-      // Create preview URLs for the new images
       const newPreviewUrls = newFiles.map(file => URL.createObjectURL(file));
       
       setImages(prevImages => [...prevImages, ...newFiles]);
@@ -638,92 +646,70 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess, existingPr
                 </label>
               </div>
               <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                PNG, JPG, GIF deri në 10 MB (maksimum 10 foto)
+                PNG, JPG, GIF bis zu 10 MB (maximal {isPremium ? 15 : 3} Fotos)
               </p>
             </div>
             
             {/* Display existing images */}
-            {existingImageUrls.length > 0 && (
-              <div className="mt-4">
-                <h4 className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                  Fotot ekzistuese
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {existingImageUrls.map((url, index) => (
-                    <div key={`existing-${index}`} className="relative group">
-                      <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md bg-gray-200">
-                        <img
-                          src={url}
-                          alt={`Existing ${index + 1}`}
-                          className="h-full w-full object-cover object-center"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeExistingImage(url)}
-                        className="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Display new images */}
-            {imagePreviewUrls.length > 0 && (
-              <div className="mt-4">
-                <h4 className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                  Fotot e reja
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {imagePreviewUrls.map((url, index) => (
-                    <div key={`new-${index}`} className="relative group">
-                      <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md bg-gray-200">
-                        <img
-                          src={url}
-                          alt={`Preview ${index + 1}`}
-                          className="h-full w-full object-cover object-center"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Add more images button */}
-            {existingImageUrls.length + imagePreviewUrls.length < 10 && (
-              <div className="mt-4 flex justify-center">
-                <label
-                  htmlFor="add-more-images"
-                  className={`flex flex-col items-center justify-center h-24 w-24 rounded-md border-2 border-dashed cursor-pointer ${
-                    darkMode 
-                      ? 'border-gray-600 hover:border-gray-500' 
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <Plus className={`h-6 w-6 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} />
-                  <span className={`mt-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Shto foto</span>
-                  <input
-                    id="add-more-images"
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    className="sr-only"
-                    onChange={handleImageChange}
+            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+              {existingImageUrls.map((url, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={url}
+                    alt={`Property ${index + 1}`}
+                    className="h-24 w-full object-cover rounded-lg"
                   />
-                </label>
-              </div>
-            )}
+                  <button
+                    type="button"
+                    onClick={() => removeExistingImage(url)}
+                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              
+              {imagePreviewUrls.map((url, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={url}
+                    alt={`Preview ${index + 1}`}
+                    className="h-24 w-full object-cover rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              
+              {existingImageUrls.length + imagePreviewUrls.length < (isPremium ? 15 : 3) && (
+                <div className="mt-4 flex justify-center">
+                  <label
+                    htmlFor="add-more-images"
+                    className={`flex flex-col items-center justify-center h-24 w-24 rounded-md border-2 border-dashed cursor-pointer ${
+                      darkMode 
+                        ? 'border-gray-600 hover:border-gray-500' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <Plus className={`h-6 w-6 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} />
+                    <span className={`mt-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Shto foto</span>
+                    <input
+                      id="add-more-images"
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={handleImageChange}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
@@ -747,6 +733,22 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess, existingPr
           </button>
         </div>
       </div>
+      
+      {/* Modal für Bild-Limit */}
+      {showImageLimitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
+            <h2 className="text-lg font-semibold mb-2">Bild-Limit erreicht</h2>
+            <p className="mb-4">{imageLimitMessage}</p>
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={() => setShowImageLimitModal(false)}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </form>
   );
 };

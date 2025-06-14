@@ -120,8 +120,8 @@ CREATE POLICY "Users can insert their own notification preferences"
 INSERT INTO settings (name, value, description)
 VALUES 
   ('site', '{"name": "RealEstate Kosovo", "description": "Platforma më e madhe e patundshmërive në Kosovë", "contact_email": "info@realestate-kosovo.com", "contact_phone": "+383 44 123 456", "footer_text": "© 2025 RealEstate Kosovo. Të gjitha të drejtat e rezervuara.", "max_upload_size": 10, "currency": "EUR"}', 'Site settings'),
-  ('properties', '{"require_approval": true, "max_images_per_property": 10, "allow_premium_features": true, "default_listing_duration": 30, "featured_properties_limit": 10}', 'Property settings'),
-  ('premium', '{"monthly_price": 9.99, "yearly_price": 99.99, "features": ["featured_listings", "unlimited_properties", "advanced_statistics", "priority_support"]}', 'Premium subscription settings'),
+  ('properties', '{"require_approval": true, "max_images_per_property": 15, "allow_premium_features": true, "default_listing_duration": 30, "featured_properties_limit": 10, "free_user_image_limit": 3, "premium_user_image_limit": 15}', 'Property settings'),
+  ('premium', '{"monthly_price": 9.99, "yearly_price": 99.99, "features": ["featured_listings", "unlimited_properties", "advanced_statistics", "priority_support", "more_images"]}', 'Premium subscription settings'),
   ('system', '{"maintenance_mode": false, "version": "1.0.0", "last_backup": null}', 'System settings');
 
 -- Create a trigger to update the updated_at timestamp

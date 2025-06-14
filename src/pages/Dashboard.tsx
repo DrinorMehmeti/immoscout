@@ -135,22 +135,42 @@ const Dashboard: React.FC = () => {
             </div>
             <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mt-2`}>{properties.length}</p>
           </div>
-          <div className={`${darkMode ? 'bg-green-900/30' : 'bg-green-50'} rounded-lg p-4`}>
+          <div className={`${darkMode ? 'bg-green-900/30' : 'bg-green-50'} rounded-lg p-4 relative`}>
             <div className="flex justify-between">
               <p className={`${darkMode ? 'text-green-300' : 'text-green-700'} font-medium`}>Shikime</p>
             </div>
             <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mt-2`}>
-              {viewStats.total}
-              <span className="ml-2 text-sm font-normal text-green-600 dark:text-green-400">
-                +{viewStats.thisWeek} këtë javë
-              </span>
+              {authState.user?.profile?.is_premium ? (
+                <>
+                  {viewStats.total}
+                  <span className="ml-2 text-sm font-normal text-green-600 dark:text-green-400">
+                    +{viewStats.thisWeek} këtë javë
+                  </span>
+                </>
+              ) : (
+                <span className="opacity-40 select-none">••••</span>
+              )}
             </p>
+            {!authState.user?.profile?.is_premium && (
+              <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex flex-col items-center justify-center rounded-lg z-10">
+                <span className="text-yellow-700 dark:text-yellow-300 text-xs font-medium mb-2 text-center">Statistikat janë të disponueshme vetëm për përdoruesit Premium.</span>
+                <a href="/premium" className="mt-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-semibold">Upgrade auf Premium</a>
+              </div>
+            )}
           </div>
-          <div className={`${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'} rounded-lg p-4`}>
+          <div className={`${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'} rounded-lg p-4 relative`}>
             <div className="flex justify-between">
               <p className={`${darkMode ? 'text-purple-300' : 'text-purple-700'} font-medium`}>Shpalljet e fav.</p>
             </div>
-            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mt-2`}>{favoritesCount}</p>
+            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mt-2`}>
+              {authState.user?.profile?.is_premium ? favoritesCount : <span className="opacity-40 select-none">••••</span>}
+            </p>
+            {!authState.user?.profile?.is_premium && (
+              <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex flex-col items-center justify-center rounded-lg z-10">
+                <span className="text-yellow-700 dark:text-yellow-300 text-xs font-medium mb-2 text-center">Statistikat janë të disponueshme vetëm për përdoruesit Premium.</span>
+                <a href="/premium" className="mt-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-semibold">Upgrade auf Premium</a>
+              </div>
+            )}
           </div>
         </div>
       </div>

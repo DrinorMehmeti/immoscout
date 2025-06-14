@@ -25,6 +25,9 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
+// Add type definitions for Supabase functions
+type SupabaseFunction = 'get_setting' | 'update_setting';
+
 interface SettingsState {
   site: {
     name: string;
@@ -41,6 +44,8 @@ interface SettingsState {
     allow_premium_features: boolean;
     default_listing_duration: number;
     featured_properties_limit: number;
+    free_user_image_limit: number;
+    premium_user_image_limit: number;
   };
   premium: {
     monthly_price: number;
@@ -75,15 +80,17 @@ const AdminSettings: React.FC = () => {
     },
     properties: {
       require_approval: true,
-      max_images_per_property: 10,
+      max_images_per_property: 15,
       allow_premium_features: true,
       default_listing_duration: 30,
-      featured_properties_limit: 10
+      featured_properties_limit: 10,
+      free_user_image_limit: 3,
+      premium_user_image_limit: 15
     },
     premium: {
       monthly_price: 9.99,
       yearly_price: 99.99,
-      features: ['featured_listings', 'unlimited_properties', 'advanced_statistics', 'priority_support']
+      features: ['featured_listings', 'unlimited_properties', 'advanced_statistics', 'priority_support', 'more_images']
     },
     system: {
       maintenance_mode: false,
@@ -547,6 +554,46 @@ const AdminSettings: React.FC = () => {
                 <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   Numri maksimal i pronave të reklamuara që shfaqen në faqen kryesore
                 </p>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="free_user_image_limit" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Maximale Bilder für Free-User
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="free_user_image_limit"
+                    name="free_user_image_limit"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={settings.properties.free_user_image_limit}
+                    onChange={(e) => updatePropertySettings('free_user_image_limit', parseInt(e.target.value) || 3)}
+                    className={`shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md ${
+                      darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="premium_user_image_limit" className={`block text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Maximale Bilder für Premium-User
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="premium_user_image_limit"
+                    name="premium_user_image_limit"
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={settings.properties.premium_user_image_limit}
+                    onChange={(e) => updatePropertySettings('premium_user_image_limit', parseInt(e.target.value) || 15)}
+                    className={`shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md ${
+                      darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''
+                    }`}
+                  />
+                </div>
               </div>
             </div>
           </div>
