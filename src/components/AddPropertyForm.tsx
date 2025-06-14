@@ -49,6 +49,9 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess, existingPr
   const [showImageLimitModal, setShowImageLimitModal] = useState(false);
   const [imageLimitMessage, setImageLimitMessage] = useState('');
   
+  // State für die aktuelle Anzahl der eigenen Immobilien
+  const [propertyCount, setPropertyCount] = useState<number | null>(null);
+  
   // Initialize form with existing property data if in edit mode
   useEffect(() => {
     if (existingProperty) {
@@ -79,6 +82,17 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess, existingPr
   
   // Premium-Status korrekt bestimmen
   const isPremium = authState.user?.profile?.is_premium;
+  
+  // Beim Mount die aktuelle Anzahl laden (nur wenn nicht Premium und nicht Edit)
+  useEffect(() => {
+    if (!isPremium && !isEditMode && authState.user) {
+      supabase
+        .from('properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('owner_id', authState.user.id)
+        .then(({ count }) => setPropertyCount(count || 0));
+    }
+  }, [isPremium, isEditMode, authState.user]);
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -222,6 +236,22 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess, existingPr
     if (!authState.user) {
       setError('Ju duhet të jeni të kyçur për të shtuar një pronë');
       return;
+    }
+    
+    // Limit für Free-User: max. 3 Immobilien
+    if (!isPremium && !isEditMode) {
+      const { count: propertyCount, error: countError } = await supabase
+        .from('properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('owner_id', authState.user.id);
+      if (countError) {
+        setError('Ndodhi një gabim gjatë kontrollit të kufirit të pronave.');
+        return;
+      }
+      if ((propertyCount || 0) >= 3) {
+        setError('Si përdorues Free mund të postoni maksimum 3 prona. Për më shumë, upgraden Sie auf Premium!');
+        return;
+      }
     }
     
     setIsSubmitting(true);
@@ -712,6 +742,18 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ onSuccess, existingPr
             </div>
           </div>
         </div>
+        
+        {/* Hinweis zum Immobilien-Limit */}
+        {!isPremium && !isEditMode && (
+          <div className="mb-4 p-3 rounded bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 text-sm">
+            Sie können noch <b>{3 - (propertyCount ?? 0)}</b> von 3 Immobilien als Free-User posten. Für unbegrenzte Immobilien upgraden Sie auf Premium!
+          </div>
+        )}
+        {isPremium && !isEditMode && (
+          <div className="mb-4 p-3 rounded bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-sm">
+            Als Premium-User können Sie <b>unbegrenzt viele Immobilien</b> posten.
+          </div>
+        )}
         
         {/* Submit Button */}
         <div className="pt-4">
