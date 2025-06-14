@@ -74,7 +74,7 @@ const Footer: React.FC = () => {
                 <Link to="/vlersimet" className="text-gray-400 hover:text-white">Vlerësimet</Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white">Këshilla ligjore</a>
+                <Link to="/keshilla-ligjore" className="text-gray-400 hover:text-white">Këshilla ligjore</Link>
               </li>
             </ul>
           </div>

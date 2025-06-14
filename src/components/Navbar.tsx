@@ -210,6 +210,11 @@ const Navbar: React.FC = () => {
             Kontakt
           </MobileNavLink>
           
+          <MobileNavLink to="/keshilla-ligjore" isActive={isActive('/keshilla-ligjore')}>
+            <Building className="mr-3 h-5 w-5" />
+            Këshilla Ligjore
+          </MobileNavLink>
+          
           {/* Dark mode toggle in mobile menu */}
           <button 
             onClick={toggleDarkMode}
