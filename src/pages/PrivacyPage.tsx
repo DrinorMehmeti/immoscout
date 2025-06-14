@@ -17,7 +17,8 @@ import {
   ChevronDown,
   Info,
   CheckCircle,
-  ExternalLink
+  ExternalLink,
+  MapPin
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
