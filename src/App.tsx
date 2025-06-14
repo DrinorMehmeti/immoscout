@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import HomepageProperties from './components/HomepageProperties';
@@ -253,7 +253,8 @@ function App() {
   const { authState } = useAuth();
   const { darkMode } = useTheme();
   const navigate = useNavigate();
-  const currentPath = window.location.pathname;
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   // Redirect authenticated users away from auth pages
   useEffect(() => {
@@ -268,9 +269,9 @@ function App() {
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
       {/* Don't show navbar on admin pages */}
-      {!window.location.pathname.startsWith('/admin') && <Navbar />}
+      {!currentPath.startsWith('/admin') && <Navbar />}
       
-      <main className={`flex-grow ${!window.location.pathname.startsWith('/admin') ? 'pt-16' : ''}`}>
+      <main className={`flex-grow ${!currentPath.startsWith('/admin') ? 'pt-16' : ''}`}>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
@@ -308,7 +309,7 @@ function App() {
         </Routes>
       </main>
       
-      {!window.location.pathname.startsWith('/admin') && <Footer />}
+      {!currentPath.startsWith('/admin') && <Footer />}
     </div>
   );
 }
