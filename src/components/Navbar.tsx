@@ -66,6 +66,10 @@ const Navbar: React.FC = () => {
                 Shpallje
               </NavLink>
               
+              <NavLink to="/agjencite" isActive={isActive('/agjencite')}>
+                Agjencitë
+              </NavLink>
+              
               <NavLink to="/kontakt" isActive={isActive('/kontakt')}>
                 Kontakt
               </NavLink>
@@ -194,6 +198,11 @@ const Navbar: React.FC = () => {
           <MobileNavLink to="/listings" isActive={isActive('/listings')}>
             <Building className="mr-3 h-5 w-5" />
             Shpallje
+          </MobileNavLink>
+          
+          <MobileNavLink to="/agjencite" isActive={isActive('/agjencite')}>
+            <Building className="mr-3 h-5 w-5" />
+            Agjencitë
           </MobileNavLink>
           
           <MobileNavLink to="/kontakt" isActive={isActive('/kontakt')}>
