@@ -41,16 +41,16 @@ const Footer: React.FC = () => {
                 <Link to="/listings" className="text-gray-400 hover:text-white">Shpallje</Link>
               </li>
               <li>
-                <Link to="/about" className="text-gray-400 hover:text-white">Rreth nesh</Link>
+                <Link to="/agjencite" className="text-gray-400 hover:text-white">Agjencitë</Link>
               </li>
               <li>
-                <Link to="/how-it-works" className="text-gray-400 hover:text-white">Si funksionon</Link>
+                <Link to="/bashkepunimet" className="text-gray-400 hover:text-white">Bashkëpunimet</Link>
               </li>
               <li>
                 <Link to="/premium" className="text-gray-400 hover:text-white">Premium</Link>
               </li>
               <li>
-                <Link to="/contact" className="text-gray-400 hover:text-white">Kontakti</Link>
+                <Link to="/kontakt" className="text-gray-400 hover:text-white">Kontakti</Link>
               </li>
             </ul>
           </div>
