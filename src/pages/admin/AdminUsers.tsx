@@ -46,16 +46,59 @@ const AdminUsers: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showIdGuidance, setShowIdGuidance] = useState(false);
   const [showAdminControls, setShowAdminControls] = useState(false);
+  const [adminCheckComplete, setAdminCheckComplete] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const usersPerPage = 10;
 
+  // First check if current user is admin to prevent permission errors
   useEffect(() => {
-    fetchUsers();
-  }, [currentPage, userTypeFilter, premiumFilter]);
+    const checkAdminStatus = async () => {
+      try {
+        // Get current user's profile to check admin status
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', (await supabase.auth.getUser()).data.user?.id || '')
+          .single();
+          
+        if (profileError) {
+          console.error("Error checking admin status:", profileError);
+          setError("Error checking admin privileges");
+          setAdminCheckComplete(true);
+          return;
+        }
+        
+        setIsAdmin(profile?.is_admin || false);
+        setAdminCheckComplete(true);
+        
+        if (profile?.is_admin) {
+          fetchUsers();
+        }
+      } catch (err) {
+        console.error("Error in admin check:", err);
+        setError("Error verifying admin status");
+        setAdminCheckComplete(true);
+      }
+    };
+    
+    checkAdminStatus();
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchUsers();
+    }
+  }, [currentPage, userTypeFilter, premiumFilter, isAdmin]);
 
   const fetchUsers = async () => {
+    if (!isAdmin) return;
+    
     setLoading(true);
     try {
+      console.log("Fetching all users as admin");
+      
       let query = supabase
         .from('profiles')
         .select('*', { count: 'exact' });
@@ -90,7 +133,10 @@ const AdminUsers: React.FC = () => {
       
       // Use the profiles data directly
       if (data) {
+        console.log(`Fetched ${data.length} users`);
         setUsers(data);
+      } else {
+        console.log("No user data returned");
       }
       
       if (count !== null) {
@@ -98,6 +144,7 @@ const AdminUsers: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching users:', error);
+      setError("Failed to fetch users. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -195,6 +242,34 @@ const AdminUsers: React.FC = () => {
     });
   };
 
+  if (!adminCheckComplete) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <AdminLayout>
+        <div className="px-4 py-5 sm:px-6 text-center">
+          <div className="bg-red-50 dark:bg-red-900/30 p-6 rounded-lg inline-flex items-start">
+            <AlertCircle className="h-6 w-6 text-red-500 mr-3 flex-shrink-0" />
+            <div className="text-left">
+              <h3 className="text-lg font-medium text-red-800 dark:text-red-300">Access Denied</h3>
+              <p className="mt-2 text-red-700 dark:text-red-400">
+                You do not have admin privileges to view this page.
+              </p>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="px-4 py-5 sm:px-6">
@@ -207,33 +282,44 @@ const AdminUsers: React.FC = () => {
       {/* Personal ID Guidance */}
       <div className="mb-6 px-4 sm:px-6">
         <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 relative">
+          <button 
+            onClick={() => setShowIdGuidance(!showIdGuidance)} 
+            className="absolute top-2 right-2 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
+          >
+            {showIdGuidance ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+            )}
+          </button>
           <div className="flex">
             <div className="flex-shrink-0">
               <AlertCircle className="h-5 w-5 text-blue-400" aria-hidden="true" />
             </div>
-            <div className="ml-3 flex-1">
+            <div className="ml-3">
               <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">
                 Udhëzime për ID-të personale
               </h3>
               <div className="mt-2 text-sm text-blue-700 dark:text-blue-400">
                 <p>
                   ID-të personale (Personal ID) janë private dhe duhet përdorur vetëm për identifikim të klientëve në komunikim të drejtpërdrejtë. 
-                  <button 
-                    onClick={() => setShowIdGuidance(!showIdGuidance)}
-                    className="ml-2 underline hover:text-blue-800 dark:hover:text-blue-300 font-medium"
-                  >
-                    {showIdGuidance ? 'Fshih detajet' : 'Shiko më shumë'}
-                  </button>
+                  {showIdGuidance && (
+                    <ul className="list-disc ml-5 mt-2 space-y-1 text-sm">
+                      <li>Kërkoni këtë ID vetëm nga klientët për qëllime verifikimi</li>
+                      <li>Mos e ndani asnjëherë ID-në e një klienti me dikë tjetër</li>
+                      <li>Përdorni ID-të për të verifikuar identitetin e klientëve gjatë komunikimit telefonik</li>
+                      <li>ID-të personale nuk duhet të shfaqen në dokumente publike</li>
+                      <li>Kërkoni ID-në personale nga klientët kur nevojitet verifikim shtesë i identitetit</li>
+                    </ul>
+                  )}
                 </p>
-                {showIdGuidance && (
-                  <ul className="list-disc ml-5 mt-2 space-y-1 text-sm">
-                    <li>Kërkoni këtë ID vetëm nga klientët për qëllime verifikimi</li>
-                    <li>Mos e ndani asnjëherë ID-në e një klienti me dikë tjetër</li>
-                    <li>Përdorni ID-të për të verifikuar identitetin e klientëve gjatë komunikimit telefonik</li>
-                    <li>ID-të personale nuk duhet të shfaqen në dokumente publike</li>
-                    <li>Kërkoni ID-në personale nga klientët kur nevojitet verifikim shtesë i identitetit</li>
-                  </ul>
-                )}
               </div>
             </div>
           </div>
@@ -322,6 +408,24 @@ const AdminUsers: React.FC = () => {
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
+        ) : error ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="bg-red-50 dark:bg-red-900/30 rounded-lg p-6 max-w-md">
+              <div className="flex">
+                <AlertCircle className="h-6 w-6 text-red-500 mr-3" />
+                <div>
+                  <h3 className="text-lg font-medium text-red-800 dark:text-red-300">Error Loading Users</h3>
+                  <p className="mt-2 text-red-700 dark:text-red-400">{error}</p>
+                  <button 
+                    onClick={() => fetchUsers()}
+                    className="mt-4 px-4 py-2 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-800"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : users.length === 0 ? (
           <div className="text-center py-10">
             <User className="h-12 w-12 text-gray-400 mx-auto mb-3" />
@@ -387,7 +491,7 @@ const AdminUsers: React.FC = () => {
                           title="Kopjo ID-në"
                         >
                           {copiedId === user.id ? (
-                            <span className="text-green-500 text-xs">Kopjuar!</span>
+                            <Check className="h-4 w-4 text-green-500" />
                           ) : (
                             <Copy className="h-4 w-4" />
                           )}
@@ -489,7 +593,7 @@ const AdminUsers: React.FC = () => {
         )}
         
         {/* Pagination */}
-        {!loading && users.length > 0 && (
+        {!loading && !error && users.length > 0 && (
           <nav className="px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
