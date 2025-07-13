@@ -5,16 +5,9 @@ import { resolve } from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react({
-      jsxRuntime: 'automatic',
-      jsxImportSource: 'react',
-      babel: {
-        plugins: [
-          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
-        ]
-      }
-    })
+    react()
   ],
+  root: process.cwd(),
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
@@ -23,15 +16,15 @@ export default defineConfig({
     assetsDir: 'assets',
     rollupOptions: {
       input: {
-        app: resolve(__dirname, 'index.html')
+        app: resolve(process.cwd(), 'index.html')
       }
     }
   },
   // Add this to clear cache issues
   clearScreen: false,
-  // Add explicit JSX handling
-  esbuild: {
-    jsxFactory: 'React.createElement',
-    jsxFragment: 'React.Fragment',
-  },
+  server: {
+    fs: {
+      strict: false
+    }
+  }
 });
